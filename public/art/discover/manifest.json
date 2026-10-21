@@ -1,0 +1,58 @@
+{
+ "lab": {
+  "file": "lab.webp",
+  "w": 762,
+  "h": 772,
+  "ax": 358.2,
+  "ay": 463.6
+ },
+ "workshop": {
+  "file": "workshop.webp",
+  "w": 702,
+  "h": 732,
+  "ax": 323.8,
+  "ay": 428.3
+ },
+ "barn": {
+  "file": "barn.webp",
+  "w": 754,
+  "h": 768,
+  "ax": 289.7,
+  "ay": 434.8
+ },
+ "observatory": {
+  "file": "observatory.webp",
+  "w": 672,
+  "h": 744,
+  "ax": 313.1,
+  "ay": 471.0
+ },
+ "telescope": {
+  "file": "telescope.webp",
+  "w": 253,
+  "h": 306,
+  "ax": 90.9,
+  "ay": 193.0
+ },
+ "greenhouse": {
+  "file": "greenhouse.webp",
+  "w": 480,
+  "h": 444,
+  "ax": 216.6,
+  "ay": 222.9
+ },
+ "flasks": {
+  "file": "flasks.webp",
+  "w": 334,
+  "h": 281,
+  "ax": 144.2,
+  "ay": 157.8
+ },
+ "toycar": {
+  "file": "toycar.webp",
+  "w": 332,
+  "h": 275,
+  "ax": 143.2,
+  "ay": 141.5
+ }
+}

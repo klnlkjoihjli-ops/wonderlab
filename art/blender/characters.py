@@ -126,10 +126,116 @@ def kid(pose='idle'):
     return root
 
 
+
+# ===================== 发现岛的四个角色（每个先做一个站着打招呼的姿势） =====================
+def chameleon():
+    """变色龙彩彩（彩虹实验室）：绿色身体、卷卷的尾巴、大眼睛，背上一排彩虹色的小点"""
+    from clay import torus
+    root = empty('Chameleon', (0, 0, 0))
+    green, belly, cheek = mat('CmGreen', '#6cc46a', 0.55), mat('CmBelly', '#c9ef9a', 0.6), mat('CmCheek', '#ffb3c1', 0.6)
+    sphere('Body', 0.5, (0, 0, 0.62), green, root, scale=(0.95, 0.85, 1.05))
+    sphere('Belly', 0.36, (0, -0.22, 0.56), belly, root, scale=(0.9, 0.6, 1.0))
+    sphere('Head', 0.42, (0, -0.08, 1.35), green, root, scale=(1.05, 0.95, 0.95))
+    for s in (-1, 1):
+        sphere(f'EyeBall{s}', 0.17, (s * 0.26, -0.28, 1.5), green, root)
+        eye(f'Eye{s}', s * 0.27, 1.52, 0.12, root, y=-0.36)
+        sphere(f'Cheek{s}', 0.07, (s * 0.25, -0.4, 1.28), cheek, root, scale=(1, 0.5, 0.7))
+        sphere(f'Foot{s}', 0.13, (s * 0.22, -0.2, 0.1), green, root, scale=(1, 1.4, 0.6))
+        piv = empty(f'ArmPiv{s}', (s * 0.42, -0.05, 0.85), root)
+        piv.rotation_euler = (0, R(s * (140 if s > 0 else 25)), 0)
+        sphere(f'Arm{s}', 0.1, (0, 0, -0.2), green, piv, scale=(1, 1, 1.9))
+    torus('Smile', 0.1, 0.022, (0, -0.47, 1.27), mat('CmInk', '#2a2630', 0.3), root, rot=(R(90), 0, 0), half=True)   # 下半个圆 = 笑脸
+    for i, col in enumerate(['#ee5a4f', '#f29c45', '#ffcf4a', '#4f9fd8', '#9b7fe0']):
+        sphere(f'Dot{i}', 0.07, (0, 0.38 - i * 0.02, 1.0 - i * 0.16 + 0.5), mat(f'CmDot{i}', col, 0.5), root)
+    torus('Tail', 0.22, 0.08, (0, 0.5, 0.3), green, root, rot=(0, R(90), 0))
+    return root
+
+
+def beaver():
+    """河狸师傅（小车工坊）：棕色身体、两颗大门牙、扁扁的尾巴、黄色安全帽、工具腰带"""
+    root = empty('Beaver', (0, 0, 0))
+    fur, muzzle, dark = mat('BvFur', '#b07a4a', 0.75), mat('BvMuz', '#f2d6b3', 0.7), mat('BvDark', '#6e4a2e', 0.7)
+    sphere('Body', 0.52, (0, 0, 0.62), fur, root, scale=(1, 0.9, 1.08))
+    sphere('Head', 0.42, (0, -0.05, 1.38), fur, root)
+    sphere('Muzzle', 0.2, (0, -0.36, 1.27), muzzle, root, scale=(1.2, 0.8, 0.8))
+    sphere('Nose', 0.07, (0, -0.52, 1.34), dark, root)
+    for s in (-1, 1):
+        box(f'Tooth{s}', (0.07, 0.04, 0.12), (s * 0.04, -0.49, 1.15), mat('BvTooth', '#fffaf0', 0.4), root, bevel=0.015)
+        eye(f'Eye{s}', s * 0.15, 1.48, 0.07, root, y=-0.37)
+        sphere(f'Ear{s}', 0.09, (s * 0.32, 0, 1.68), dark, root)
+        sphere(f'Foot{s}', 0.14, (s * 0.24, -0.22, 0.1), dark, root, scale=(1, 1.5, 0.6))
+        piv = empty(f'ArmPiv{s}', (s * 0.44, -0.05, 0.9), root)
+        piv.rotation_euler = (0, R(s * (145 if s > 0 else 20)), 0)
+        sphere(f'Arm{s}', 0.12, (0, 0, -0.22), fur, piv, scale=(1, 1, 1.9))
+    sphere('Tail', 0.3, (0, 0.55, 0.15), dark, root, scale=(0.8, 1.4, 0.25))
+    sphere('Hat', 0.38, (0, -0.02, 1.62), mat('BvHat', '#ffcf4a', 0.45), root, scale=(1, 1, 0.65))
+    cylinder('Brim', 0.46, 0.05, (0, -0.06, 1.55), mat('BvHat2', '#ffcf4a', 0.45), root)
+    box('Belt', (0.92, 0.5, 0.12), (0, -0.05, 0.62), mat('BvBelt', '#4f6fb8', 0.6), root, bevel=0.06)
+    box('Wrench', (0.06, 0.04, 0.3), (0.3, -0.5, 0.6), mat('BvTool', '#c9ced6', 0.3, metal=0.6), root, bevel=0.02)
+    return root
+
+
+def hedgehog():
+    """刺猬园丁（小农场）：圆滚滚、背上一根根刺、浅色的脸、草帽"""
+    root = empty('Hedgehog', (0, 0, 0))
+    spike, face, hat = mat('HhSpike', '#8a5b3c', 0.8), mat('HhFace', '#f6dfc2', 0.7), mat('HhHat', '#f2cf7a', 0.75)
+    sphere('Body', 0.55, (0, 0.05, 0.62), spike, root, scale=(1, 0.95, 1.0))
+    sphere('Front', 0.44, (0, -0.2, 0.62), face, root, scale=(0.95, 0.7, 1.05))
+    sphere('Snout', 0.16, (0, -0.55, 0.78), face, root, scale=(0.9, 1.3, 0.85))
+    sphere('Nose', 0.06, (0, -0.74, 0.8), mat('HhNose', '#2a2630', 0.3), root)
+    from mathutils import Vector
+    k = 0
+    for lat in (20, 45, 70):                 # 背上和头顶一圈圈的刺，沿身体表面朝外
+        for lon in range(-110, 111, 22):
+            if lat == 70 and abs(lon) > 70:
+                continue
+            la, lo = R(lat), R(lon)
+            n = Vector((math.sin(lo) * math.cos(la), math.cos(lo) * math.cos(la), math.sin(la)))   # +Y 是背后
+            c = cone(f'Spike{k}', 0.075, 0.0, 0.34, (n.x * 0.55, 0.05 + n.y * 0.52, 0.62 + n.z * 0.55), spike, root)
+            c.rotation_mode = 'QUATERNION'
+            c.rotation_quaternion = n.to_track_quat('Z', 'Y')
+            k += 1
+    for s in (-1, 1):
+        eye(f'Eye{s}', s * 0.15, 0.92, 0.07, root, y=-0.48)
+        sphere(f'Cheek{s}', 0.06, (s * 0.25, -0.5, 0.75), mat('HhCheek', '#ffb3c1', 0.6), root, scale=(1, 0.5, 0.7))
+        sphere(f'Foot{s}', 0.12, (s * 0.22, -0.25, 0.08), face, root, scale=(1, 1.4, 0.6))
+    cylinder('HatBrim', 0.55, 0.05, (0, 0, 1.2), hat, root, bevel=0.02)
+    sphere('HatTop', 0.28, (0, 0, 1.24), hat, root, scale=(1, 1, 0.7))
+    cylinder('HatBand', 0.29, 0.06, (0, 0, 1.3), mat('HhBand', '#7dba5a', 0.6), root)
+    return root
+
+
+def redpanda():
+    """小熊猫望望（星星天文台）：橘红色毛、白色脸斑、一圈圈条纹的大尾巴、蓝色小围巾"""
+    from clay import torus
+    root = empty('RedPanda', (0, 0, 0))
+    fur, white, dark = mat('RpFur', '#d9733a', 0.7), mat('RpWhite', '#fff6ea', 0.7), mat('RpDark', '#5a3424', 0.75)
+    sphere('Body', 0.5, (0, 0, 0.62), dark, root, scale=(1, 0.9, 1.08))
+    sphere('Back', 0.48, (0, 0.06, 0.66), fur, root, scale=(1, 0.85, 1.05))
+    sphere('Head', 0.44, (0, -0.05, 1.38), fur, root, scale=(1.1, 0.95, 0.95))
+    sphere('Muzzle', 0.18, (0, -0.38, 1.28), white, root, scale=(1.2, 0.8, 0.8))
+    sphere('Nose', 0.06, (0, -0.53, 1.33), mat('RpNose', '#2a2630', 0.3), root)
+    for s in (-1, 1):
+        sphere(f'Brow{s}', 0.09, (s * 0.18, -0.38, 1.6), white, root, scale=(1.3, 0.4, 0.7))
+        sphere(f'Cheek{s}', 0.12, (s * 0.3, -0.3, 1.28), white, root, scale=(1, 0.6, 0.8))
+        eye(f'Eye{s}', s * 0.16, 1.46, 0.075, root, y=-0.39)
+        sphere(f'Ear{s}', 0.13, (s * 0.34, 0, 1.72), fur, root, scale=(1, 0.6, 1.1))
+        sphere(f'EarIn{s}', 0.07, (s * 0.34, -0.06, 1.72), white, root, scale=(1, 0.4, 1))
+        sphere(f'Foot{s}', 0.13, (s * 0.22, -0.2, 0.1), dark, root, scale=(1, 1.4, 0.6))
+        piv = empty(f'ArmPiv{s}', (s * 0.43, -0.05, 0.9), root)
+        piv.rotation_euler = (0, R(s * (150 if s > 0 else 20)), 0)
+        sphere(f'Arm{s}', 0.11, (0, 0, -0.22), dark, piv, scale=(1, 1, 1.9))
+    torus('Scarf', 0.36, 0.08, (0, -0.02, 1.02), mat('RpScarf', '#4f9fd8', 0.6), root)
+    for i in range(5):
+        sphere(f'Tail{i}', 0.2 - i * 0.015, (0.25 + i * 0.07, 0.45 + i * 0.12, 0.25 + i * 0.16), fur if i % 2 == 0 else mat('RpStripe', '#f2c49a', 0.7), root)
+    return root
+
+
 CHARS = {
     'owl_idle': lambda: owl('idle'), 'owl_wave': lambda: owl('wave'), 'owl_cheer': lambda: owl('cheer'), 'owl_fly': lambda: owl('fly'),
     'rabbit_idle': lambda: rabbit('idle'), 'rabbit_happy': lambda: rabbit('happy'),
     'kid_idle': lambda: kid('idle'), 'kid_walk1': lambda: kid('walk1'), 'kid_walk2': lambda: kid('walk2'), 'kid_cheer': lambda: kid('cheer'),
+    'chameleon_idle': chameleon, 'beaver_idle': beaver, 'hedgehog_idle': hedgehog, 'redpanda_idle': redpanda,
 }
 
 if __name__ == '__main__':

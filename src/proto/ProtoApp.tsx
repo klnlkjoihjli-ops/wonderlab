@@ -7,6 +7,7 @@ import { LAB_LEVELS } from '../../shared/modules/lab';
 import { MATCH_LEVELS, MISSION_LEVELS, ORDER_LEVELS, SCENE_LEVELS, SPOT_LEVELS, type MissionRecord } from '../../shared/modules/play';
 import { SortGame } from './SortGame';
 import { LabGame, MatchGame, MissionGame, OrderGame, SceneGame, SpotGame } from './Games';
+import { IslandMap } from './IslandMap';
 
 /** 这一关现在能不能玩：有小样内容，或者已经有 3D 工作台 */
 const BENCH = new Set(['c2', 'v3']);
@@ -132,7 +133,7 @@ export function ProtoApp() {
         {route.s === 'area' && <Area a={route.a} st={st} go={go} />}
         {route.s === 'level' && <Level id={route.id} st={st} go={go} />}
         {route.s === 'play' && <Play id={route.id} st={st} setSt={setSt} onFinish={() => finish(route.id)} />}
-        {route.s === 'done' && <Done id={route.id} opened={route.opened} st={st} toArea={() => toArea(node(route.id).a)} home={home} />}
+        {route.s === 'done' && <Done id={route.id} opened={route.opened} st={st} toArea={() => (node(route.id).d === 'sci' && stack[stack.length - 2]?.s === 'island' ? setStack(s => s.slice(0, -1)) : toArea(node(route.id).a))} home={home} />}
         {route.s === 'reward' && <Reward st={st} />}
         {route.s === 'parent' && <Parent st={st} open={open} setSt={setSt} />}
         {route.s === 'map' && <SiteMap st={st} open={open} />}
@@ -228,6 +229,13 @@ function World({ st, go }: { st: State; go: (r: Route) => void }) {
 }
 
 function Island({ d, st, go }: { d: DomainId; st: State; go: (r: Route) => void }) {
+  const [list, setList] = useState(false);
+  if (d === 'sci' && !list) return (
+    <div className="pf-col wide">
+      <IslandMap done={new Set(st.done)} band={st.band} areas={st.areas} onPlay={id => go({ s: 'play', id })} onDetail={id => go({ s: 'level', id })} />
+      <p className="pf-hint">发现岛已经有地图了。家长想看全部关卡的列表：<button className="pf-btn small" onClick={() => setList(true)}>切换成列表</button></p>
+    </div>
+  );
   const D = dom(d), open = openAreas(st), next = nextAreaIn(d, st);
   return (
     <div className="pf-col">
@@ -373,7 +381,7 @@ function Done({ id, opened, st, toArea, home }: { id: string; opened: string[]; 
         {opened.length > 0 && <p><b>新开放：</b>{opened.map(o => `${node(o).name}${isChallenge(node(o), st.band) ? '（挑战关）' : ''}`).join('、')}</p>}
         <Art h={80}>撒花动画、小诺欢呼</Art>
         <div className="pf-row">
-          <button className="pf-cta" onClick={toArea}>去{areaOf(n.a).name}看看</button>
+          <button className="pf-cta" onClick={toArea}>{n.d === 'sci' ? '回发现岛地图' : `去${areaOf(n.a).name}看看`}</button>
           <button className="pf-cta alt" onClick={home}>回首页看今天的事</button>
         </div>
       </div>

@@ -37,13 +37,14 @@ def clean_shadow(im):
 
 def main():
     before = after = 0
-    base = os.path.join(ROOT, 'number', 'base.png')
-    if os.path.exists(base):
-        out = base[:-4] + '.jpg'
-        Image.open(base).convert('RGB').save(out, quality=86, optimize=True, progressive=True)
-        before += kb(base); after += kb(out)
-        print('base', kb(base), '→', kb(out), 'KB')
-    for sub in ('number', 'chars'):
+    for island in ('number', 'discover'):
+        base = os.path.join(ROOT, island, 'base.png')
+        if os.path.exists(base):
+            out = base[:-4] + '.jpg'
+            Image.open(base).convert('RGB').save(out, quality=86, optimize=True, progressive=True)
+            before += kb(base); after += kb(out)
+            print(island, 'base', kb(base), '→', kb(out), 'KB')
+    for sub in ('number', 'discover', 'chars'):
         mf = os.path.join(ROOT, sub, 'manifest.json')
         if not os.path.exists(mf):
             continue

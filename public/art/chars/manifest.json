@@ -68,5 +68,33 @@
   "h": 294,
   "ax": 92.8,
   "ay": 258.6
+ },
+ "chameleon_idle": {
+  "file": "chameleon_idle.webp",
+  "w": 226,
+  "h": 279,
+  "ax": 97.8,
+  "ay": 216.6
+ },
+ "beaver_idle": {
+  "file": "beaver_idle.webp",
+  "w": 238,
+  "h": 295,
+  "ax": 103.8,
+  "ay": 229.6
+ },
+ "hedgehog_idle": {
+  "file": "hedgehog_idle.webp",
+  "w": 256,
+  "h": 247,
+  "ax": 113.9,
+  "ay": 181.6
+ },
+ "redpanda_idle": {
+  "file": "redpanda_idle.webp",
+  "w": 233,
+  "h": 286,
+  "ax": 101.1,
+  "ay": 224.2
  }
 }

@@ -72,3 +72,17 @@ test('生活任务卡：一天只记一次，记够天数等家长确认；天�
   assert.match(lv.sum!.say(5, 7), /晴天有 5 天/);
   for (const [id, m] of Object.entries(MISSION_LEVELS)) { assert.equal(PLAYS[id][0], 'mission', id); assert.ok(m.todo.length >= 2 && m.days >= 1); }
 });
+
+test('发现岛地图：每个幼儿园段的关都有关卡点，点都在岛上，互相不挤', async () => {
+  const { readFileSync } = await import('node:fs');
+  const L = JSON.parse(readFileSync(new URL('../src/proto/discoverLayout.json', import.meta.url), 'utf8'));
+  const spots: [string, number[]][] = L.zones.flatMap((z: { id: string; spots: Record<string, number[]> }) => Object.entries(z.spots).map(([id, p]) => { assert.equal(node(id).a, z.id, `${id} 放错了区域`); return [id, p] as [string, number[]]; }));
+  const want = NODES.filter(n => n.d === 'sci' && ageIndex(n.age!) <= ageIndex('br')).map(n => n.id).sort();
+  assert.deepEqual(spots.map(s => s[0]).sort(), want);
+  const I = L.island;
+  for (const [id, [x, y]] of spots) assert.ok(((x - I.cx) / I.rx) ** 2 + ((y - I.cy) / I.ry) ** 2 < 0.9, `${id} 不在岛上`);
+  for (let i = 0; i < spots.length; i++) for (let j = i + 1; j < spots.length; j++) {
+    const d = Math.hypot(spots[i][1][0] - spots[j][1][0], spots[i][1][1] - spots[j][1][1]);
+    assert.ok(d >= 100, `${spots[i][0]} 和 ${spots[j][0]} 太挤（${Math.round(d)}）`);
+  }
+});

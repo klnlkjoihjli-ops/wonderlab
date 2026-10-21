@@ -1,7 +1,9 @@
 """数字岛底图：按 src/demo/numberLayout.json 生成地形（海、沙滩、草地、小山、瀑布、小河、池塘、小路、花园），
 用和物件一样的镜头角度、一样的暖光渲染成一张大图。地形一次性用 numpy 算，地图再大也快。
-运行：blender -b -P number_map.py
+运行：blender -b -P number_map.py                      （数字岛）
+      WL_LAYOUT=src/proto/discoverLayout.json WL_OUT=public/art/discover/base.png blender -b -P number_map.py   （发现岛）
 输出：public/art/number/base.png（世界尺寸的 1.5 倍）
+布局里可以有 routes（几条小路）；没有就用 gate + 关卡点连成一条。river、waterfall、garden、plaza 都是可选的。
 """
 import json
 import math
@@ -18,7 +20,7 @@ import clay   # noqa: E402
 import sprites   # noqa: E402
 
 ROOT = os.path.normpath(os.path.join(HERE, '..', '..'))
-L = json.load(open(os.path.join(ROOT, 'src', 'demo', 'numberLayout.json')))
+L = json.load(open(os.path.join(ROOT, os.environ.get('WL_LAYOUT', 'src/demo/numberLayout.json'))))
 W, H, PPMAP = L['world']['w'], L['world']['h'], L['world']['pxPerMeter']
 SIN = math.sin(sprites.ELEV)
 RES = 1.5                       # 渲染倍数
@@ -79,11 +81,16 @@ def build_terrain(nx=900, ny=600):
         hill += 5.2 * (hr / 300) * np.exp(-(d / hr) ** 2 * 1.5)
     hill = np.where(land, hill, 0)
     h = h + hill
-    route = catmull([L['gate']] + [L['spots'][f'm{i}'] for i in range(1, 11)])
-    river = catmull(L['river'])
-    rd, pd_ = poly_dist(X, Y, river), poly_dist(X, Y, route)
-    wx, wy = L['waterfall']
-    wf = np.hypot(X - wx, (Y - wy) * 0.8) < 80                # 瀑布：河的源头，从山上落下来
+    if 'routes' in L:
+        pd_ = np.min([poly_dist(X, Y, catmull(r)) for r in L['routes']], axis=0)
+    else:
+        pd_ = poly_dist(X, Y, catmull([L['gate']] + [L['spots'][f'm{i}'] for i in range(1, 11)]))
+    rd = poly_dist(X, Y, catmull(L['river'])) if 'river' in L else np.full(X.shape, 1e9)
+    if 'waterfall' in L:
+        wx, wy = L['waterfall']
+        wf = np.hypot(X - wx, (Y - wy) * 0.8) < 80            # 瀑布：河的源头，从山上落下来
+    else:
+        wf = np.zeros(X.shape, bool)
     river_on = (rd < 40) & land
     h = np.where(river_on, np.minimum(h, -0.65 + (rd / 40) ** 2 * 0.6 + np.where(wf, hill * 0.7, 0)), h)
     P = L['pond']
@@ -111,10 +118,12 @@ def build_terrain(nx=900, ny=600):
     C = np.where(path[..., None], pathc * (1 - te) + edge * te, C)
     C = np.where(((river_on & (rd < 32)) | (pdist < 1))[..., None], hexrgb('#6fd3e6'), C)
     C = np.where((wf & river_on)[..., None], hexrgb('#f2fbff'), C)       # 瀑布白白的水花
-    gx, gy = L['garden']
-    C = np.where(((((X - gx) / 120) ** 2 + ((Y - gy) / 52) ** 2) < 1)[..., None], hexrgb('#c99060'), C)
-    pl = L['plaza']
-    C = np.where(((((X - pl[0]) / 220) ** 2 + ((Y - pl[1]) / 80) ** 2) < 1)[..., None] & land[..., None], hexrgb('#efe2c4'), C)
+    if 'garden' in L:
+        gx, gy = L['garden']
+        C = np.where(((((X - gx) / 120) ** 2 + ((Y - gy) / 52) ** 2) < 1)[..., None], hexrgb('#c99060'), C)
+    if 'plaza' in L:
+        pl = L['plaza']
+        C = np.where(((((X - pl[0]) / 220) ** 2 + ((Y - pl[1]) / 80) ** 2) < 1)[..., None] & land[..., None], hexrgb('#efe2c4'), C)
     # —— 建网格 ——
     GX, GY = (X - W / 2) / PPMAP, (H / 2 - Y) / (PPMAP * SIN)
     verts = np.stack([GX.ravel(), GY.ravel(), h.ravel()], 1).astype(np.float32)
@@ -178,7 +187,7 @@ def main():
     cam.data.ortho_scale = W / PPMAP
     sc.render.resolution_x, sc.render.resolution_y = int(W * RES), int(H * RES)
     sc.cycles.samples = 40
-    out = os.path.join(ROOT, 'public', 'art', 'number', 'base.png')
+    out = os.path.join(ROOT, os.environ.get('WL_OUT', 'public/art/number/base.png'))
     sc.render.filepath = out
     bpy.ops.render.render(write_still=True)
     print('BASE', out)
