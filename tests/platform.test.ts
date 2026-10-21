@@ -10,12 +10,12 @@ test('从零开始：每个领域的第一关开放，其余锁着；没有预�
   assert.ok(platformSchema.safeParse(p).success);
 });
 test('依赖解锁：同领域前一关 + 跨领域依赖都要点亮', () => {
-  assert.deepEqual(prereqs(node('v3')).sort(), ['e2', 'v2']);
-  const done = new Set(['v1', 'v2']);
-  assert.equal(nodeState('v3', done), 'lock');           // 还差“身边的单词”
-  done.add('e1'); done.add('e2');
-  assert.equal(nodeState('v3', done), 'now');
-  assert.deepEqual(newlyOpened('e2', new Set(['v1', 'v2', 'e1'])).map(n => n.id).sort(), ['e3', 'v3']);
+  assert.deepEqual(prereqs(node('e5')).sort(), ['c1', 'e4']);   // 英语“颜色单词”要先会认颜色
+  const done = new Set(['e10', 'e2', 'e4']);
+  assert.equal(nodeState('e5', done), 'lock');           // 还差“认识颜色”
+  done.add('c1');
+  assert.equal(nodeState('e5', done), 'now');
+  assert.deepEqual(newlyOpened('c1', new Set(['e10', 'e2', 'e4'])).map(n => n.id).sort(), ['c7', 'e5']);
 });
 test('点亮知识点：发花、经验、顺手完成今天的 WonderLab 日程', () => {
   const p = freshPlatform();
@@ -24,7 +24,7 @@ test('点亮知识点：发花、经验、顺手完成今天的 WonderLab 日程
   assert.equal(r.p.done.includes('c1'), true);
   assert.equal(r.p.flowers, 2);                          // 点亮 1 + 日程 1
   assert.ok(r.p.week[today].find(b => b.n.startsWith('WonderLab'))!.done);
-  assert.deepEqual(r.opened.map(n => n.id), ['c2']);
+  assert.deepEqual(r.opened.map(n => n.id), ['c7']);
   assert.equal(completeNode(r.p, 'c1', today).p, r.p);   // 不重复发
 });
 test('孩子完成任务：需要家长看的进入待确认，确认后才得花', () => {
@@ -77,13 +77,14 @@ test('屏幕时间', () => {
   p.screen.usedSec = 20 * 60; assert.equal(screenOver(p), true);
   p.screen.extra = 10; assert.equal(screenLeftMin(p), 10);
 });
-test('关卡表：5 块大陆；每个区域 7–10 关、层级连续；跨区域依赖都存在；全部关卡最终都能解锁', async () => {
+test('关卡表：5 块大陆；每个区域 7–20 关、层级连续；跨区域依赖都存在；全部关卡最终都能解锁', async () => {
   const { AREAS } = await import('../shared/platform.ts');
   assert.equal(DOMAINS.length, 5);
   for (const a of AREAS) {
     const lvs = NODES.filter(n => n.a === a.id).map(n => n.lv).sort((x, y) => x - y);
-    assert.ok(lvs.length >= 7 && lvs.length <= 10, `${a.id} 有 ${lvs.length} 关`);
-    assert.deepEqual(lvs, lvs.map((_, i) => i));
+    assert.ok(lvs.length >= 7 && lvs.length <= 20, `${a.id} 有 ${lvs.length} 关`);
+    const max = lvs[lvs.length - 1];
+    assert.deepEqual([...new Set(lvs)], Array.from({ length: max + 1 }, (_, i) => i), `${a.id} 层级要连续`);   // 同一层可以有几关并排
     assert.ok(DOMAINS.some(d => d.id === a.d));
   }
   for (const n of NODES) assert.equal(n.d, AREAS.find(a => a.id === n.a)!.d);   // 关卡属于它区域所在的大陆
@@ -138,7 +139,7 @@ test('今日任务：5 块大陆里每天必做 3 块（探险日第一 + 轮流
   p.done.push('m1'); p.events.push({ at: new Date(2026, 9, 20, 7, 40).toISOString(), type: 'complete', detail: 'x', node: 'm1' });
   plan = todayPlan(p, tue);
   const m = plan.find(x => x.d === 'math')!;
-  assert.equal(m.state, 'done'); assert.deepEqual(m.doneToday.map(n => n.id), ['m1']); assert.equal(m.next!.id, 'm2');
+  assert.equal(m.state, 'done'); assert.deepEqual(m.doneToday.map(n => n.id), ['m1']); assert.equal(m.next!.id, 'm11');   // 同一层还有“一样多吗”
   p.done.push('c1'); p.events.push({ at: new Date(2026, 9, 19, 20, 0).toISOString(), type: 'complete', detail: 'x', node: 'c1' });
   assert.equal(todayPlan(p, tue).find(x => x.d === 'sci')!.state, 'todo');
   const allArt = { done: NODES.filter(n => n.d === 'art').map(n => n.id), events: [] };

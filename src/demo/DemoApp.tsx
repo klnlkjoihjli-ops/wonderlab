@@ -85,7 +85,7 @@ type Step = 'wake' | 'hello' | 'review' | 'plan';
 function Opening({ profile, p, onGo, onEdit }: { profile: Profile; p: ReturnType<typeof usePlatform>['p']; onGo: (n: Node | null) => void; onEdit: () => void }) {
   const now = new Date();
   const [pretend, setPretend] = useState(() => { try { return localStorage.getItem(PRETEND_KEY) === '1'; } catch { return false; } });
-  // 演示开关：没有真实的“昨天”时，假装昨天玩过“数到 20”（只影响这一屏，不写进记录）
+  // 演示开关：没有真实的“昨天”时，假装昨天玩过“帮兔子摘花”（只影响这一屏，不写进记录）
   const real = dailyThree(p, now);
   const three = !real.review && pretend ? dailyThree(p, now, NODES.find(n => n.id === 'm1')!) : real;
   const reviewNode = three.review;
@@ -115,7 +115,7 @@ function Opening({ profile, p, onGo, onEdit }: { profile: Profile; p: ReturnType
       <div className="op-sky" aria-hidden><i /><i /><i /><i /><i /></div>
       <header className="op-top">
         <button className="op-chip" onClick={onEdit}>🧒 {profile.name} · {ageText(profile.birth, now)}</button>
-        <label className="op-chip demo-flag"><input type="checkbox" checked={pretend} onChange={e => { setPretend(e.target.checked); try { localStorage.setItem(PRETEND_KEY, e.target.checked ? '1' : '0'); } catch { /* 忽略 */ } }} />演示：假装昨天玩过「数到 20」</label>
+        <label className="op-chip demo-flag"><input type="checkbox" checked={pretend} onChange={e => { setPretend(e.target.checked); try { localStorage.setItem(PRETEND_KEY, e.target.checked ? '1' : '0'); } catch { /* 忽略 */ } }} />演示：假装昨天玩过「帮兔子摘花」</label>
       </header>
 
       {step === 'wake' ? (

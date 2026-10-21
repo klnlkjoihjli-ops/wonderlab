@@ -17,5 +17,5 @@ const https = wantHttps ? { cert: readFileSync(certFile), key: readFileSync(keyF
 export default defineConfig({
   plugins: [react()],
   server: { host: '0.0.0.0', port: wantHttps ? 4178 : 4177, strictPort: true, https, proxy: { '/api': { target: 'http://127.0.0.1:8787', changeOrigin: false } } },
-  build: { chunkSizeWarningLimit: 800, rollupOptions: { input: { main: 'index.html', bench: 'bench.html', demo: 'demo.html' }, output: { manualChunks: { three: ['three'] } } } }
+  build: { chunkSizeWarningLimit: 800, rollupOptions: { input: { main: 'index.html', bench: 'bench.html', demo: 'demo.html', proto: 'proto.html' }, output: { manualChunks: { three: ['three'] } } } }
 });

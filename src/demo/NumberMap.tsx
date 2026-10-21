@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { NODES, completeNode, dayIndex, node as nodeOf, nodeState, prereqs, type Node, type Platform } from '../../shared/platform';
+import { NODES, completeNode, dayIndex, node as nodeOf, type Node, type NodeState, type Platform } from '../../shared/platform';
 import type { Profile } from '../../shared/daily';
 import { logEvent } from '../world/platformStore';
 import { sfx, speak, stopSpeaking } from '../audio';
@@ -70,7 +70,10 @@ export function NumberMap({ p, update, profile, focus, onBack }: {
   const art = useArt();
   const A = art && art !== 'missing' ? art : null;
   const done = useMemo(() => new Set(p.done), [p.done]);
-  const state = (id: string) => nodeState(id, done);
+  // 地图上只画了 10 个关卡点，按小路的顺序一个接一个开（目录按年龄扩充后，有些前置关不在地图上；等目录定下来再重画地图）
+  const mapPrev = (id: string) => { const i = ORDER.indexOf(id); return i > 0 ? ORDER[i - 1] : null; };
+  const state = (id: string): NodeState => done.has(id) ? 'done' : (() => { const pv = mapPrev(id); return !pv || done.has(pv) ? 'now' : 'lock'; })();
+  const mapNeed = (n: Node) => { const pv = mapPrev(n.id); return pv && !done.has(pv) ? [nodeOf(pv)] : []; };
   const nextId = ORDER.find(id => state(id) === 'now');
 
   // —— 尺寸、小路长度 ——
@@ -168,7 +171,7 @@ export function NumberMap({ p, update, profile, focus, onBack }: {
   function arrive(id: string) {
     setCard(id); sfx.place();
     const n = nodeOf(id), st = state(id);
-    if (st === 'lock') { const need = prereqs(n).map(nodeOf).filter(x => !done.has(x.id)); speak(`「${n.name}」还被灰灰雾挡着。先去点亮「${need.map(x => x.name).join('」和「')}」吧。`); }
+    if (st === 'lock') { const need = mapNeed(n); speak(`「${n.name}」还被灰灰雾挡着。先去点亮「${need.map(x => x.name).join('」和「')}」吧。`); }
     else if (st === 'done') speak(`「${n.name}」你已经点亮啦！`);
     else speak(`这里是「${n.name}」。${n.goal}。`);
   }
@@ -335,7 +338,7 @@ export function NumberMap({ p, update, profile, focus, onBack }: {
       {/* 顶部 */}
       <header className="map-top">
         <button className="round-btn" aria-label="回到今天" onClick={onBack}>←</button>
-        <div className="map-title"><b>🔢 数字岛</b><small>数与形状</small></div>
+        <div className="map-title"><b>🔢 数字岛</b><small>数学</small></div>
         <button className="map-chapter" onClick={() => { setStory(true); speak('第 1 章，钟楼不响了。灰灰雾飘到了数字岛，钟楼的指针停了，数数兔也数乱了。帮数数兔一关一关把数字找回来，钟楼就会重新敲响！'); }}>📖 第 1 章 · 钟楼不响了</button>
         <div className="spacer" />
         <div className="hud-stat" aria-label={`小红花 ${p.flowers} 朵`}><b className="flower">✿ {p.flowers}</b></div>
@@ -361,7 +364,7 @@ export function NumberMap({ p, update, profile, focus, onBack }: {
 
       {cardNode && !kid.walking && (() => {
         const st = state(cardNode.id), ready = READY.has(cardNode.id);
-        const need = prereqs(cardNode).map(nodeOf).find(x => !done.has(x.id));
+        const need = mapNeed(cardNode)[0];
         return (
           <div className="task-card map-card" role="dialog" aria-label={cardNode.name} style={{ ['--dc' as string]: '#4fb39b' }}>
             <div className="task-icon" aria-hidden>{cardNode.icon}</div>

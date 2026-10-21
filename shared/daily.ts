@@ -1,7 +1,7 @@
 // 商用版 P0 小样的规则：孩子档案（年龄 → 阶段）、每天三件事（复习 + 新学 + 动手）、昨天回顾的问题和判断。
 // 画面只负责展示；这里的判断都有测试（tests/daily.test.ts）。
 
-import { NODES, THEME_DOMAIN, dayIndex, dayKey, nodeState, openAreas, type DomainId, type Node } from './platform';
+import { NODES, THEME_DOMAIN, ageIndex, dayIndex, dayKey, nodeState, openAreas, visibleFor, type AgeId, type DomainId, type Node } from './platform';
 import { readNumbers } from './modules/count';
 
 // —— 孩子档案 ——
@@ -59,15 +59,22 @@ export function yesterdayDone(events: Ev[], now = new Date()): Node[] {
 export const PLAYABLE_MODULES = new Set(['car', 'lights', 'flowers']);
 
 export type DailyThree = { review: Node | null; learn: Node | null; play: Node | null; theme: DomainId | null };
-/** review：可以指定要复习的那一关（比如演示时），其余两件会避开它 */
-export function dailyThree(p: { done: string[]; events: Ev[]; areas?: Record<string, boolean> }, now = new Date(), review: Node | null = reviewPick(p.events, now)): DailyThree {
-  const done = new Set(p.done), open = openAreas(p), theme = THEME_DOMAIN[dayIndex(now)];
-  const canLearn = (n: Node) => open.has(n.a) && !done.has(n.id) && nodeState(n.id, done) === 'now';
-  // 新学：先在今天的探险日大陆里找，没有就在别的大陆找
-  const learnPool = NODES.filter(canLearn);
+/** 新学关卡的先后：自己年龄段的最先，再补更小年龄段没玩过的（越接近越先），没标年龄的旧关居中，挑战关最后 */
+export function learnRank(n: Node, band?: AgeId): number {
+  if (!band || !n.age) return 3;
+  const d = ageIndex(n.age) - ageIndex(band);
+  return d === 0 ? 0 : d < 0 ? 1 + (-d) * 0.1 : 9;
+}
+/** review：可以指定要复习的那一关（比如演示时），其余两件会避开它；band：孩子的年龄段，不传就和以前一样不看年龄 */
+export function dailyThree(p: { done: string[]; events: Ev[]; areas?: Record<string, boolean>; band?: AgeId }, now = new Date(), review: Node | null = reviewPick(p.events, now)): DailyThree {
+  const done = new Set(p.done), open = openAreas(p), theme = THEME_DOMAIN[dayIndex(now)], band = p.band;
+  const shown = (n: Node) => open.has(n.a) && (!band || visibleFor(n, band, done));
+  const canLearn = (n: Node) => shown(n) && !done.has(n.id) && nodeState(n.id, done, band) === 'now';
+  // 新学：先在今天的探险日大陆里找，没有就在别的大陆找；同一块大陆里按年龄段排先后
+  const learnPool = NODES.filter(canLearn).map((n, i) => ({ n, i })).sort((a, b) => learnRank(a.n, band) - learnRank(b.n, band) || a.i - b.i).map(x => x.n);
   const learn = learnPool.find(n => n.d === theme && n.id !== review?.id) ?? learnPool.find(n => n.id !== review?.id) ?? null;
   // 动手：能玩的工作台/小游戏，优先还没玩过的，不和上面两件重复
-  const labs = NODES.filter(n => n.module && PLAYABLE_MODULES.has(n.module) && open.has(n.a) && nodeState(n.id, done) !== 'lock' && n.id !== learn?.id && n.id !== review?.id);
+  const labs = NODES.filter(n => n.module && PLAYABLE_MODULES.has(n.module) && shown(n) && nodeState(n.id, done, band) !== 'lock' && n.id !== learn?.id && n.id !== review?.id);
   // 没有可玩的工作台时，退而求其次：挑一个现在能做的“动手”关（尽量不和新学的在同一块大陆）
   const handsOn = learnPool.filter(n => n.id !== learn?.id && n.id !== review?.id && n.how.some(h => h === '动手' || h === '3D' || h === '拆解'))
     .sort((a, b) => Number(a.d === learn?.d) - Number(b.d === learn?.d));
