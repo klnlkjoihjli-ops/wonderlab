@@ -37,7 +37,8 @@ const SRC_FULL: [string, string][] = [
   ['科学课标 ', '《义务教育科学课程标准（2022年版）》'],
   ['道德与法治课标 ', '《义务教育道德与法治课程标准（2022年版）》'],
   ['体育与健康课标 ', '《义务教育体育与健康课程标准（2022年版）》'],
-  ['艺术课标 ', '《义务教育艺术课程标准（2022年版）》']
+  ['艺术课标 ', '《义务教育艺术课程标准（2022年版）》'],
+  ['劳动课标 ', '《义务教育劳动课程标准（2022年版）》']
 ];
 const srcFull = (src: string) => { const hit = SRC_FULL.find(([k]) => src.startsWith(k)); return hit ? hit[1] + src.slice(hit[0].length) : src; };
 
@@ -224,7 +225,7 @@ function Island({ d, st, go }: { d: DomainId; st: State; go: (r: Route) => void 
         {AREAS.filter(a => a.d === d).map(a => {
           const isOpen = open.has(a.id), all = seen(st, n => n.a === a.id), lit = all.filter(n => st.done.includes(n.id)).length;
           if (isOpen && all.length === 0) {
-            // 这个年龄一关都没有（比如英语：课标从一年级开始，幼儿园不提前教）
+            // 这个年龄一关都没有（比如英语：课标从 1～2 年级开始，幼儿园不提前教）
             const first = NODES.filter(n => n.a === a.id && n.age).sort((x, y) => ageIndex(x.age!) - ageIndex(y.age!))[0];
             return (
               <div key={a.id} className="pf-card locked">
@@ -288,7 +289,7 @@ function Area({ a, st, go }: { a: AreaId; st: State; go: (r: Route) => void }) {
       {hiddenBy.length > 0 && (
         <p className="pf-hidden">☁️ 还有 {hidden.length} 关，长大一点再来：{hiddenBy.map(x => `${x.g.name} ${x.k} 关`).join('、')}。
           {hidden.some(n => n.age !== 'g1') && '自己年龄段的关都点亮了，会先出现下一段的挑战关。'}
-          {hidden.some(n => n.age === 'g1') && st.band !== 'g1' && '一年级的关要到 6 岁上学以后才出现。'}
+          {hidden.some(n => n.age === 'g1') && st.band !== 'g1' && '1～2 年级的关要到 6 岁上学以后才出现。'}
         </p>
       )}
     </div>
@@ -404,7 +405,7 @@ function SiteMap({ st, open }: { st: State; open: Set<AreaId> }) {
       <p className="pf-hint">首页的 3 张卡片可以直接跳到“关卡说明”，不用一层层点进去；首页还能去“小红花”和“家长”。</p>
 
       <h3>按年龄段：每个区域有几关</h3>
-      <p className="pf-hint">依据：幼儿园三段按教育部《3-6岁儿童学习与发展指南》（2012），幼小衔接按《幼儿园入学准备教育指导要点》（2021），一年级按 2022 年版各科课程标准的 1～2 年级要求（数学、语文、英语、科学、道德与法治、体育与健康、艺术）。按教育部要求，拼音、识字、英语只放在一年级。</p>
+      <p className="pf-hint">依据：幼儿园三段按教育部《3-6岁儿童学习与发展指南》（2012），幼小衔接按《幼儿园入学准备教育指导要点》（2021），1～2 年级按 2022 年版各科课程标准的第一学段要求（数学、语文、英语、科学、道德与法治、体育与健康、艺术、劳动）。按教育部要求，拼音、识字、英语只放在 1～2 年级。</p>
       <div className="pf-scroll">
         <table className="pf-table">
           <thead><tr><th>区域</th>{AGES.map(a => <th key={a.id} className={a.id === st.band ? 'me' : ''}>{a.name}<br /><small>{a.range}</small></th>)}<th>未分年龄</th></tr></thead>

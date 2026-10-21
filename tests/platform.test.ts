@@ -77,12 +77,12 @@ test('屏幕时间', () => {
   p.screen.usedSec = 20 * 60; assert.equal(screenOver(p), true);
   p.screen.extra = 10; assert.equal(screenLeftMin(p), 10);
 });
-test('关卡表：5 块大陆；每个区域 7–20 关、层级连续；跨区域依赖都存在；全部关卡最终都能解锁', async () => {
+test('关卡表：5 块大陆；每个区域 7–30 关、层级连续；跨区域依赖都存在；全部关卡最终都能解锁', async () => {
   const { AREAS } = await import('../shared/platform.ts');
   assert.equal(DOMAINS.length, 5);
   for (const a of AREAS) {
     const lvs = NODES.filter(n => n.a === a.id).map(n => n.lv).sort((x, y) => x - y);
-    assert.ok(lvs.length >= 7 && lvs.length <= 20, `${a.id} 有 ${lvs.length} 关`);
+    assert.ok(lvs.length >= 7 && lvs.length <= 30, `${a.id} 有 ${lvs.length} 关`);
     const max = lvs[lvs.length - 1];
     assert.deepEqual([...new Set(lvs)], Array.from({ length: max + 1 }, (_, i) => i), `${a.id} 层级要连续`);   // 同一层可以有几关并排
     assert.ok(DOMAINS.some(d => d.id === a.d));

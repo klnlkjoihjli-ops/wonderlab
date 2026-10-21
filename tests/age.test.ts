@@ -6,7 +6,7 @@ import { dailyThree } from '../shared/daily.ts';
 const math = NODES.filter(n => n.d === 'math');
 const mon = new Date(2026, 9, 19, 9);   // 周一：数字岛探险日
 
-test('年龄段：按月龄分，衔接期从 5 岁半开始，6 岁上一年级', () => {
+test('年龄段：按月龄分，衔接期从 5 岁半开始，6 岁起是 1～2 年级', () => {
   assert.equal(ageBandOf(30), 'k1'); assert.equal(ageBandOf(47), 'k1'); assert.equal(ageBandOf(48), 'k2');
   assert.equal(ageBandOf(60), 'k3'); assert.equal(ageBandOf(65), 'k3'); assert.equal(ageBandOf(66), 'br');
   assert.equal(ageBandOf(71), 'br'); assert.equal(ageBandOf(72), 'g1'); assert.equal(ageBandOf(100), 'g1');
@@ -32,13 +32,13 @@ test('全部 5 座岛：每关都标了年龄段和依据；每座岛 5 个年�
     else assert.ok(src.startsWith('指南 '), `${n.id} 是幼儿园的关，依据要是《指南》`);
   }
 });
-test('识字、拼音、英语只在一年级出现（教基厅函〔2018〕57号）', () => {
+test('识字、拼音、英语只在 1～2 年级出现（教基厅函〔2018〕57号）', () => {
   for (const n of NODES.filter(x => x.a === 'eng')) assert.equal(n.age, 'g1', `${n.id} 英语出现在幼儿园年龄段`);
   for (const n of NODES.filter(x => /拼音|识字/.test(x.name + x.goal))) assert.equal(n.age, 'g1', `${n.id} 拼音或识字出现在幼儿园年龄段`);
   for (const n of NODES.filter(x => x.src?.startsWith('语文课标') || x.src?.startsWith('英语课标'))) assert.equal(n.age, 'g1');
 });
 
-test('能看到哪些关：自己和更小的年龄段；本区域自己这段做完才出挑战关；6 岁前看不到一年级', () => {
+test('能看到哪些关：自己和更小的年龄段；本区域自己这段做完才出挑战关；6 岁前看不到 1～2 年级', () => {
   const none = new Set<string>();
   assert.ok(visibleFor(node('m11'), 'k2', none));                  // 小班的关中班能看到
   assert.ok(!visibleFor(node('m16'), 'k2', none));                 // 大班的关中班先看不到
@@ -75,5 +75,11 @@ test('每天三件事按年龄出：新学的是自己年龄段的；小班不�
     assert.equal(t.learn!.age, a.id, `${a.name}今天新学的是 ${t.learn!.id}`);
     for (const n of [t.review, t.learn, t.play]) if (n) assert.ok(n.age, `${n.id} 没标年龄`);
     for (const n of [t.review, t.learn, t.play]) if (n?.age) assert.ok(ageIndex(n.age) <= ageIndex(a.id), `${a.name}出了 ${n.id}`);
+  }
+});
+test('1～2 年级覆盖 8 门课的课标第一学段', () => {
+  const g1 = NODES.filter(n => n.age === 'g1');
+  for (const s of ['数学', '语文', '英语', '科学', '道德与法治', '体育与健康', '艺术', '劳动']) {
+    assert.ok(g1.some(n => n.src!.startsWith(s + '课标 ')), `1～2 年级还没有引用${s}课标`);
   }
 });
