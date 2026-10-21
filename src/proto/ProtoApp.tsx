@@ -1,6 +1,9 @@
 import { useEffect, useState } from 'react';
 import { AGES, AREAS, DOMAINS, NODES, PET, SHOP, ageBandOf, ageIndex, isChallenge, nextAreaIn, node, nodeState, openAreas, petOf, prereqs, visibleFor, type AgeId, type AreaId, type DomainId, type Node } from '../../shared/platform';
 import { ageOf, dailyThree } from '../../shared/daily';
+import { ENGINES, PLAYS, SCENES } from '../../shared/games';
+import { SORT_LEVELS } from '../../shared/modules/sort';
+import { SortGame } from './SortGame';
 
 // 线框版：不放美术，只用方块、文字和 emoji，把“怎么点、怎么进去、怎么分类、不同年龄看到什么”走通。
 // 分类、关卡、年龄段、解锁规则、每天三件事都直接用 shared/ 里的真规则，和正式版保持一致。
@@ -49,7 +52,7 @@ const NOTES: Record<Route['s'], { what: string; art: string }> = {
   island: { what: '一座岛里分几个区域，分类参照《指南》和课标。有的区域要点亮够了关卡才“浮出来”；这个年龄还没有内容的区域（比如幼儿园阶段的英语）会显示什么时候开放。', art: '这座岛的大地图（比如数字岛那张），区域用地标表示' },
   area: { what: '一个区域里的关卡一层一层排：上一层点亮了，下一层才能玩。只显示这个年龄能看到的关；比自己年龄段小的关当作已经会了，也可以回去玩。自己年龄段的都点亮了，会出现下一段的“挑战关”。', art: '地图上的小路和关卡点，或者一条台阶/小路' },
   level: { what: '关卡说明：这一关学什么、怎么玩、适合几岁、依据哪份文件。家长看得懂，孩子听小诺读。', art: '关卡的小插图、小诺讲解' },
-  play: { what: '这里以后放真正的游戏（3D 工作台、语音数数、小游戏）。线框版先用一个按钮代替。', art: '每个游戏单独设计' },
+  play: { what: '每关用 17 种玩法里的一种。“分一分”已经做成能玩的小样（认识形状、冷暖色、动物的家、自然的还是人造的、垃圾分类）；其余玩法先显示设计稿，用一个按钮代替。', art: '每种玩法设计一次，所有用它的关共用' },
   done: { what: '完成奖励：得小红花，告诉孩子新开放了哪些关卡。', art: '撒花动画、小诺欢呼、新关卡亮起来' },
   reward: { what: '小红花和成长伙伴：攒花换奖励（家长确认），伙伴随经验长大。', art: '伙伴的 5 个成长阶段、奖励商店' },
   parent: { what: '家长端：看每座岛的进度，手动打开或关上区域，清空进度。', art: '家长端以简洁为主，不需要太多美术' },
@@ -275,7 +278,7 @@ function Area({ a, st, go }: { a: AreaId; st: State; go: (r: Route) => void }) {
   );
   return (
     <div className="pf-col">
-      <h2 style={{ color: D.color }}>{A.icon} {A.name}</h2>
+      <h2 style={{ color: D.color }}>{A.icon} {A.name} <small>· {SCENES[a].place}，{SCENES[a].npc}在这里</small></h2>
       <p className="pf-hint">从上往下走：这一层点亮了，下一层才打开。<span className="lg done">✓ 点亮</span><span className="lg now">● 现在能玩</span><span className="lg lock">🔒 还没开</span></p>
       {nodes.length > 0 ? steps(nodes) : <p className="pf-hidden">这个区域没有「{ageName(st.band)}」的关，下面是更小时候的关，可以回去玩。</p>}
       {younger.length > 0 && (
@@ -306,7 +309,8 @@ function Level({ id, st, go }: { id: string; st: State; go: (r: Route) => void }
         <h2>{n.name}</h2>
         <p>{dom(n.d).icon} {dom(n.d).name} › {areaOf(n.a).name} › 第 {n.lv + 1} 层</p>
         <p><b>学会了：</b>{n.goal}</p>
-        <p><b>怎么玩：</b>{n.how.join(' · ')}{n.module ? `（有屏幕上的玩法：${n.module}）` : '（屏幕上的玩法还没做，先线下玩）'}</p>
+        <p className="pf-play"><b>玩法：</b>{ENGINES[PLAYS[n.id][0]].icon} {ENGINES[PLAYS[n.id][0]].name} — {PLAYS[n.id][1]}</p>
+        <p className="pf-src">{SCENES[n.a].place}的{SCENES[n.a].npc}请你帮忙 · 完成后{SCENES[n.a].reward}{SORT_LEVELS[n.id] || n.module ? ' · 已经能玩' : ' · 玩法还在设计稿里'}</p>
         <p><b>适合：</b>{A ? `${A.name}（${A.range}）` : '还没按年龄整理'} <AgeChip n={n} band={st.band} /></p>
         {n.src && <p className="pf-src"><b>依据：</b>{srcFull(n.src)}</p>}
         {pre.length > 0 && <p><b>先要点亮：</b>{pre.map(p => `${p.name}${done.has(p.id) ? ' ✓' : p.age && ageIndex(p.age) < ageIndex(st.band) ? '（这个年龄当作已经会了）' : ''}`).join('、')}</p>}
@@ -320,10 +324,12 @@ function Level({ id, st, go }: { id: string; st: State; go: (r: Route) => void }
 }
 
 function Play({ id, onFinish }: { id: string; onFinish: () => void }) {
-  const n = node(id);
+  const n = node(id), [e, line] = PLAYS[id], E = ENGINES[e];
+  if (SORT_LEVELS[id]) return <div className="pf-col narrow"><SortGame level={SORT_LEVELS[id]} onFinish={onFinish} /></div>;
   return (
     <div className="pf-col narrow">
-      <Art h={300}>{`「${n.name}」的游戏画面${n.module ? `（工作台模块：${n.module}）` : ''}`}</Art>
+      <Art h={240}>{`「${n.name}」· ${E.icon} ${E.name}：${line}`}</Art>
+      <p className="pf-hint"><b>这种玩法怎么玩：</b>{E.loop}。<b>怎么判断：</b>{E.judge}。<b>不同年龄：</b>{E.ages}。</p>
       <button className="pf-cta" onClick={onFinish}>✓ 我玩完了（线框版直接算完成）</button>
     </div>
   );
@@ -403,6 +409,19 @@ function SiteMap({ st, open }: { st: State; open: Set<AreaId> }) {
         {['首页（小诺 + 今天 3 件事）', '大地图（5 座岛）', '岛（几个区域）', '区域（关卡一层层）', '关卡说明', '玩', '完成奖励'].map((t, i) => <span key={i}>{i > 0 && <i>→</i>}<b>{t}</b></span>)}
       </div>
       <p className="pf-hint">首页的 3 张卡片可以直接跳到“关卡说明”，不用一层层点进去；首页还能去“小红花”和“家长”。</p>
+
+      <h3>17 种玩法（每关 = 一种玩法 + 这关的题目 + 这个年龄的难度）</h3>
+      <div className="pf-tree">
+        {(Object.keys(ENGINES) as (keyof typeof ENGINES)[]).map(k => {
+          const E = ENGINES[k], used = Object.values(PLAYS).filter(([g]) => g === k).length;
+          return (
+            <div key={k} className="pf-tree-d">
+              <b>{E.icon} {E.name}</b> <small>{used} 关{E.built ? ` · 已做好：${E.built}` : ''}{k === 'sort' ? ' · 小样能玩' : ''}</small>
+              <p className="pf-hint">{E.loop}</p>
+            </div>
+          );
+        })}
+      </div>
 
       <h3>按年龄段：每个区域有几关</h3>
       <p className="pf-hint">依据：幼儿园三段按教育部《3-6岁儿童学习与发展指南》（2012），幼小衔接按《幼儿园入学准备教育指导要点》（2021），1～2 年级按 2022 年版各科课程标准的第一学段要求（数学、语文、英语、科学、道德与法治、体育与健康、艺术、劳动）。按教育部要求，拼音、识字、英语只放在 1～2 年级。</p>

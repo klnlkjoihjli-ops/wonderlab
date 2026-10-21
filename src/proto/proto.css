@@ -95,3 +95,25 @@ button:disabled { cursor: default; opacity: 0.5; }
 .pf-table th small { font-weight: 400; color: #999; }
 @media (max-width: 700px) { .pf-age span { display: none; } }
 .pf-fold { align-self: flex-start; }
+
+/* 玩法 */
+.pf-play { background: #f3f8ff; border-radius: 10px; padding: 8px 10px; }
+.pf-col h2 small { font-size: 15px; }
+.sg { display: flex; flex-direction: column; gap: 14px; }
+.sg-npc { display: flex; align-items: flex-start; gap: 10px; background: #fff; border: 1px solid #ddd; border-radius: 16px; padding: 12px 14px; }
+.sg-npc p { flex: 1; margin: 0; font-size: 18px; line-height: 1.5; animation: sg-in .25s ease; }
+.sg-who { flex: none; font-size: 13px; padding: 2px 8px; border-radius: 999px; background: #fff1d6; color: #9a5b00; margin-top: 4px; }
+.sg-floor { display: flex; flex-wrap: wrap; gap: 10px; justify-content: center; min-height: 120px; padding: 14px; border-radius: 18px; background: #eef6e6; border: 2px dashed #b9d7a3; }
+.sg-item { display: flex; flex-direction: column; align-items: center; width: 84px; padding: 8px 4px; border-radius: 16px; border: 2px solid transparent; background: #fff; transition: transform .15s; }
+.sg-item span { font-size: 44px; line-height: 1.1; }
+.sg-item small { font-size: 13px; color: #666; }
+.sg-item.on { border-color: #2c2c2c; transform: translateY(-8px) scale(1.06); box-shadow: 0 6px 0 #0001; }
+.sg-item.bounce { animation: sg-shake .45s ease; }
+.sg-empty { color: #7a9a66; margin: auto; }
+.sg-bins { display: grid; gap: 10px; }
+.sg-bin { display: flex; flex-direction: column; min-height: 150px; border: 3px solid #cfcac0; border-radius: 18px; background: #fff; padding: 0; overflow: hidden; }
+.sg-bin.ready { border-style: dashed; }
+.sg-bin-h { padding: 8px 6px; font-weight: 600; background: #f3f1ec; font-size: 15px; }
+.sg-in { flex: 1; display: flex; flex-wrap: wrap; gap: 4px; align-content: flex-start; justify-content: center; padding: 8px; font-size: 30px; }
+@keyframes sg-shake { 0%,100% { transform: translateX(0); } 20% { transform: translateX(-10px); } 40% { transform: translateX(10px); } 60% { transform: translateX(-6px); } 80% { transform: translateX(6px); } }
+@keyframes sg-in { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: none; } }
