@@ -6,16 +6,21 @@ import { sfx, speak, stopSpeaking } from '../audio';
 import { CloseIcon, OwlFace } from '../components/Icons';
 import { HoldButton } from '../world/HoldButton';
 import { DepthSorted, LAYOUT, SpriteImg, artUrl, useArt, ART_SCALE } from './MapArt';
+import { Balloon, Beacon, Birds, Boats, Butterflies, Clouds, FxDefs, LighthouseGlow, Waterfall, Waves, Windmill } from './MapFx';
 
 // 数字岛 2D 大地图（小样）：一张能拖、能缩放的插画地图。
 // 地图上的东西都是“数据”：关卡点、小路、居民、彩蛋的位置写在下面的表里，以后加内容不用改画法。
 
-const WORLD = { w: 2400, h: 1500 };
+const WORLD = LAYOUT.world;
 type Pt = [number, number];
 /** 小路：从码头出发，经过 10 个关卡 */
 // 位置都来自 numberLayout.json（Blender 渲染底图也读这一份）
 const GATE = LAYOUT.gate as Pt;
 const SPOTS = LAYOUT.spots as unknown as Record<string, Pt>;
+/** 地图上某个物件的位置 */
+const propAt = (id: string) => (LAYOUT.props.find(p => p.id === id)?.at ?? [0, 0]) as Pt;
+/** 彩蛋：苹果、小鱼、钟楼、风车、灯塔、城堡 */
+const EGG_TOTAL = 6;
 const ORDER = ['m1', 'm2', 'm3', 'm4', 'm5', 'm6', 'm7', 'm8', 'm9', 'm10'];
 const READY = new Set(['m1']);                   // 小样里能直接玩的关（摘花游戏）
 const RABBIT_LINES = [
@@ -82,7 +87,14 @@ export function NumberMap({ p, update, profile, focus, onBack }: {
     });
   }, []);
   // 一开始：镜头对准小人；从工作台回来时对准那一关
-  useEffect(() => { const t = kid.pos; flyTo(t[0] + 200, t[1] - 120, 0.8); }, []);
+  useEffect(() => {
+    const t = kid.pos;
+    if (focus && SPOTS[focus]) { flyTo(t[0] + 120, t[1] - 100, 1.05, 10); return; }
+    // 开场镜头：先看到整座岛，停一下，再慢慢飞到小人身边（像游戏开场）
+    setCam(clampCam({ x: WORLD.w / 2, y: WORLD.h / 2, z: 0.01 }));
+    const id = setTimeout(() => flyTo(t[0] + 160, t[1] - 120, 1.05, 2600), 1300);
+    return () => clearTimeout(id);
+  }, []);
   useEffect(() => {
     if (focus && SPOTS[focus]) return;
     speak(`欢迎来到数字岛！${profile.name}，拖一拖地图，到处看看。发光的地方就是现在能玩的关卡。`);
@@ -95,9 +107,9 @@ export function NumberMap({ p, update, profile, focus, onBack }: {
     return { z, x: Math.min(WORLD.w - hw, Math.max(hw, c.x)), y: Math.min(WORLD.h - hh, Math.max(hh, c.y)) };
   };
   const anim = useRef(0);
-  function flyTo(x: number, y: number, z = camRef.current.z) {
+  function flyTo(x: number, y: number, z = camRef.current.z, dur = 700) {
     cancelAnimationFrame(anim.current);
-    const from = camRef.current, t0 = performance.now(), dur = 700;
+    const from = camRef.current, t0 = performance.now();
     const step = () => {
       const k = Math.min(1, (performance.now() - t0) / dur), e = 1 - Math.pow(1 - k, 3);
       setCam(clampCam({ x: from.x + (x - from.x) * e, y: from.y + (y - from.y) * e, z: from.z + (z - from.z) * e }));
@@ -172,10 +184,15 @@ export function NumberMap({ p, update, profile, focus, onBack }: {
   // —— 居民和彩蛋 ——
   const pop = (x: number, y: number, text: string) => { setBubble({ x, y, text, key: Date.now() }); speak(text); };
   const findEgg = (id: string) => setEggs(s => { if (s.has(id)) return s; const n = new Set(s); n.add(id); setTimeout(() => sfx.success(), 300); return n; });
-  const tapRabbit = () => { if (!tapOk()) return; const line = RABBIT_LINES[rabbitLine % RABBIT_LINES.length]; setRabbitLine(i => i + 1); pop(330, 1000, line); };
-  const tapTree = () => { if (!tapOk()) return; setApple(a => a + 1); sfx.pick(); findEgg('apple'); pop(620, 820, '咚！一个苹果掉下来了。数一数，树上还剩几个？'); };
-  const tapPond = () => { if (!tapOk()) return; setFish(f => f + 1); sfx.splash(); findEgg('fish'); pop(1230, 1150, '一条小鱼跳了出来！池塘里一共有 3 条鱼哦。'); };
-  const tapClock = () => { if (!tapOk()) return; findEgg('clock'); pop(1900, 420, '钟楼被灰灰雾盖住了，指针不走了。学会看钟表，它就会“当——”地重新响起来！'); };
+  const RB = LAYOUT.rabbit as Pt;
+  const tapRabbit = () => { if (!tapOk()) return; const line = RABBIT_LINES[rabbitLine % RABBIT_LINES.length]; setRabbitLine(i => i + 1); pop(RB[0], RB[1] - 80, line); };
+  const tapTree = () => { if (!tapOk()) return; setApple(a => a + 1); sfx.pick(); findEgg('apple'); pop(propAt('appletree')[0], propAt('appletree')[1] - 120, '咚！一个苹果掉下来了。数一数，树上还剩几个？'); };
+  const tapPond = () => { if (!tapOk()) return; setFish(f => f + 1); sfx.splash(); findEgg('fish'); pop(LAYOUT.pond.cx, LAYOUT.pond.cy - 40, '一条小鱼跳了出来！池塘里一共有 3 条鱼哦。'); };
+  const tapClock = () => { if (!tapOk()) return; findEgg('clock'); pop(propAt('clocktower')[0], propAt('clocktower')[1] - 220, '钟楼被灰灰雾盖住了，指针不走了。学会看钟表，它就会“当——”地重新响起来！'); };
+  const [windFast, setWindFast] = useState(false);
+  const tapWindmill = () => { if (!tapOk()) return; findEgg('windmill'); setWindFast(true); setTimeout(() => setWindFast(false), 4000); pop(propAt('windmill')[0], propAt('windmill')[1] - 260, '呼——起风啦！风车转得好快。数一数，风车有几片叶子？'); };
+  const tapLighthouse = () => { if (!tapOk()) return; findEgg('lighthouse'); pop(propAt('lighthouse')[0], propAt('lighthouse')[1] - 260, '这是灯塔！晚上它会亮灯，帮小船找到回家的路。数一数，它有几道红条纹？'); };
+  const tapCastle = () => { if (!tapOk()) return; findEgg('castle'); pop(propAt('castle')[0], propAt('castle')[1] - 200, '积木城堡！它是用一块块正方体搭起来的。第 4 关会教你把正方体拆开再折回去。'); };
   const tapFog = (name: string, x: number, y: number) => { if (!tapOk()) return; pop(x, y, `☁️ 这里是「${name}」，还在灰灰雾里。正式版里，点亮更多关卡它就会浮出来。`); };
 
   const cardNode: Node | null = card ? nodeOf(card) : null;
@@ -187,12 +204,13 @@ export function NumberMap({ p, update, profile, focus, onBack }: {
           <MapDefs />
           {A ? (
             <>
-              {/* 底图：Blender 渲染的地形（海、沙滩、草地、小山、小河、池塘、小路） */}
+              <FxDefs />
+              {/* 底图：Blender 渲染的地形 */}
+              <rect x={-1200} y={-1200} width={WORLD.w + 2400} height={WORLD.h + 2400} fill="#2b8db6" />
               <image href={artUrl('/art/number/base.jpg')} x={0} y={0} width={WORLD.w} height={WORLD.h} />
-              <rect x={-400} y={-400} width={WORLD.w + 800} height={400} fill="#33a1c2" />
-              <rect x={-400} y={WORLD.h} width={WORLD.w + 800} height={400} fill="#33a1c2" />
-              <rect x={-400} y={0} width={400} height={WORLD.h} fill="#33a1c2" /><rect x={WORLD.w} y={0} width={400} height={WORLD.h} fill="#33a1c2" />
-              <g className="waves">{Array.from({ length: 14 }, (_, i) => <path key={i} d={`M${(i * 173) % 2300 + 40},${(i % 2 ? 60 + i * 9 : 1430 - i * 6)} q12,-8 24,0 q12,8 24,0`} />)}</g>
+              <Waves />
+              <Waterfall />
+              <Boats A={A} />
               {/* 走路用的小路（看不见，只用来算位置） */}
               <path ref={pathRef} d={ROUTE_D} fill="none" stroke="none" />
               {/* 池塘里的小鱼（彩蛋） */}
@@ -200,18 +218,20 @@ export function NumberMap({ p, update, profile, focus, onBack }: {
                 <ellipse cx={LAYOUT.pond.cx} cy={LAYOUT.pond.cy} rx={LAYOUT.pond.rx} ry={LAYOUT.pond.ry} fill="transparent" />
                 <g key={fish} className={fish ? 'fish-jump' : ''} transform={`translate(${LAYOUT.pond.cx - 10},${LAYOUT.pond.cy - 10})`}><path d="M-22,0 Q0,-16 22,0 Q0,16 -22,0 Z M22,0 L36,-10 L36,10 Z" fill="#ff9a5c" /></g>
               </g>
+              <Butterflies />
               <DepthSorted items={[
                 ...LAYOUT.props.map((pr, i) => {
                   const [x, y] = pr.at as Pt;
+                  if (pr.id === 'windmill') return { y, key: `p${i}`, node: <Windmill A={A} at={[x, y]} fast={windFast} onTap={tapWindmill} /> };
                   let key = pr.id;
                   if (pr.id === 'clocktower') key = done.has('m7') ? 'clocktower_restored' : 'clocktower_stopped';
                   if (/^house\d+$/.test(pr.id)) key = `${pr.id}_${done.has('m' + pr.id.slice(5)) ? 'lit' : 'dark'}`;
                   if (pr.id === 'appletree') key = apple ? 'appletree_bare' : 'appletree';
-                  const onClick = pr.tap === 'clock' ? tapClock : pr.tap === 'apple' ? tapTree : undefined;
+                  const onClick = pr.tap === 'clock' ? tapClock : pr.tap === 'apple' ? tapTree : pr.tap === 'lighthouse' ? tapLighthouse : pr.tap === 'castle' ? tapCastle : undefined;
                   return {
                     y, key: `p${i}`, node: (
                       <>
-                        <SpriteImg s={A.props[key]} dir="number" x={x} y={y} className={onClick ? 'tappable' : undefined} onClick={onClick} />
+                        <SpriteImg s={A.props[key]} dir="number" x={x} y={y} scale={(pr as { scale?: number }).scale ?? 1} className={onClick ? 'tappable' : undefined} onClick={onClick} />
                         {pr.id === 'appletree' && apple > 0 && Array.from({ length: Math.min(apple, 5) }, (_, k) => (
                           <SpriteImg key={k} s={A.props.apple} dir="number" x={x - 50 + k * 22} y={y + 22} className={k === apple - 1 ? 'apple-drop' : ''} />
                         ))}
@@ -224,14 +244,22 @@ export function NumberMap({ p, update, profile, focus, onBack }: {
                   };
                 }),
                 ...ORDER.map((id, i) => ({ y: SPOTS[id][1], key: id, node: <SpotArt A={A} id={id} n={nodeOf(id)} at={SPOTS[id]} st={state(id)} next={id === nextId} idx={i + 1} onTap={() => tapSpot(id)} /> })),
-                { y: 1075, key: 'rabbit', node: <SpriteImg s={A.chars[rabbitLine % 2 ? 'rabbit_happy' : 'rabbit_idle']} dir="chars" x={330} y={1075} className="tappable rabbit-art" onClick={tapRabbit} /> },
+                { y: RB[1], key: 'rabbit', node: <SpriteImg s={A.chars[rabbitLine % 2 ? 'rabbit_happy' : 'rabbit_idle']} dir="chars" x={RB[0]} y={RB[1]} className="tappable rabbit-art" onClick={tapRabbit} /> },
                 { y: kid.pos[1] + 15, key: 'kid', node: <SpriteImg s={A.chars[kid.walking ? (walkFrame ? 'kid_walk1' : 'kid_walk2') : 'kid_idle']} dir="chars" x={kid.pos[0] - (kid.walking || kid.at === 'gate' ? 0 : 62)} y={kid.pos[1] + (kid.walking || kid.at === 'gate' ? 0 : 14)} flip={kid.face < 0} /> }
               ]} />
+              <LighthouseGlow A={A} at={propAt('lighthouse')} />
+              {nextId && <Beacon at={SPOTS[nextId]} />}
               {/* 灰灰雾里的地方（还没浮出来） */}
-              <Fog x={560} y={330} label="比一比集市" sub="正式版会浮出来" onTap={() => tapFog('比一比集市', 560, 330)} />
-              {!done.has('m7') && <Fog x={1900} y={470} label="钟楼广场" sub="时间与钱" onTap={tapClock} light />}
+              {LAYOUT.areas.filter(a => !a.open && a.at).map(a => {
+                const [fx, fy] = a.at as Pt;
+                if (a.id === 'clock' && done.has('m7')) return null;
+                return <Fog key={a.id} x={fx} y={fy} label={a.name} sub={a.id === 'clock' ? '时间与钱' : '正式版会浮出来'} onTap={a.id === 'clock' ? tapClock : () => tapFog(a.name, fx, fy)} light={a.id === 'clock'} />;
+              })}
               {/* 守护者名字 */}
-              <g transform="translate(330,880)" pointerEvents="none"><rect x={-62} y={-18} width={124} height={34} rx={17} fill="#4fb39b" /><text y={6} textAnchor="middle" fontSize={18} fontWeight={700} fill="#fff">数数兔 💬</text></g>
+              <g transform={`translate(${RB[0]},${RB[1] - 175})`} pointerEvents="none"><rect x={-62} y={-18} width={124} height={34} rx={17} fill="#4fb39b" /><text y={6} textAnchor="middle" fontSize={18} fontWeight={700} fill="#fff">数数兔 💬</text></g>
+              <Balloon A={A} />
+              <Birds />
+              <Clouds />
             </>
           ) : (
             <>
@@ -311,7 +339,7 @@ export function NumberMap({ p, update, profile, focus, onBack }: {
         <button className="map-chapter" onClick={() => { setStory(true); speak('第 1 章，钟楼不响了。灰灰雾飘到了数字岛，钟楼的指针停了，数数兔也数乱了。帮数数兔一关一关把数字找回来，钟楼就会重新敲响！'); }}>📖 第 1 章 · 钟楼不响了</button>
         <div className="spacer" />
         <div className="hud-stat" aria-label={`小红花 ${p.flowers} 朵`}><b className="flower">✿ {p.flowers}</b></div>
-        <div className="map-eggs" aria-label={`找到彩蛋 ${eggs.size} 个，一共 3 个`}>🥚 {eggs.size}/3</div>
+        <div className="map-eggs" aria-label={`找到彩蛋 ${eggs.size} 个，一共 ${EGG_TOTAL} 个`}>🥚 {eggs.size}/{EGG_TOTAL}</div>
       </header>
       <div className="map-zoom">
         <button onClick={() => setCam(c => clampCam({ ...c, z: c.z * 1.25 }))} aria-label="放大">＋</button>

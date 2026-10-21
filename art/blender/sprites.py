@@ -42,7 +42,7 @@ def reset_sprite_scene():
     sc.world = world
     # 主光（左上、暖）+ 补光（右、冷）
     # 主光放高一点（影子短、柔），从左上方照过来
-    for name, rot, energy, color, angle in (('Key', (math.radians(30), 0, math.radians(-35)), 2.6, (1.0, 0.9, 0.76), 22),
+    for name, rot, energy, color, angle in (('Key', (math.radians(32), 0, math.radians(-35)), 3.0, (1.0, 0.86, 0.66), 20),
                                             ('Fill', (math.radians(55), 0, math.radians(125)), 0.7, (0.8, 0.88, 1.0), 30)):
         ld = bpy.data.lights.new(name, 'SUN')
         ld.energy, ld.color, ld.angle = energy, color, math.radians(angle)
@@ -81,9 +81,11 @@ def _bbox(objs):
 YAW = math.radians(30)   # 物件统一转 30°，能看到两个面，才有 2.5D 的感觉
 
 
-def render_sprite(path, root=None, key=None, pad=0.35, shadow_pad=0.6, samples=None, yaw=YAW, elev=None):
+def render_sprite(path, root=None, key=None, pad=0.35, shadow_pad=0.6, samples=None, yaw=YAW, elev=None, shadow=True):
     """把场景里所有物体渲染成一张透明 PNG，自动取景；返回落地点（原点）在图里的位置（@1x 像素）"""
     sc = bpy.context.scene
+    if not shadow and 'ShadowCatcher' in bpy.data.objects:      # 飘在空中 / 水上的东西不要地面影子
+        bpy.data.objects.remove(bpy.data.objects['ShadowCatcher'])
     for o in sc.objects:
         if o.parent is None and o.type in ('EMPTY', 'MESH', 'FONT') and o.name != 'ShadowCatcher':
             o.rotation_euler.z += yaw
@@ -118,6 +120,15 @@ def render_sprite(path, root=None, key=None, pad=0.35, shadow_pad=0.6, samples=N
     ax = (0 - x0) * PPM
     ay = (y1 - 0) * PPM
     info = {'file': os.path.basename(path), 'w': round(rx / SCALE), 'h': round(ry / SCALE), 'ax': round(ax, 1), 'ay': round(ay, 1)}
+    # 标记点：名字以 PT_ 开头的空物体（比如风车的轴心、灯塔的灯），记下它们在图里的位置（@1x 像素）
+    pts_out = {}
+    for o in sc.objects:
+        if o.type == 'EMPTY' and o.name.startswith('PT_'):
+            wp = o.matrix_world.translation
+            px, py = proj(wp)
+            pts_out[o.name[3:]] = [round((px - x0) * PPM, 1), round((y1 - py) * PPM, 1)]
+    if pts_out:
+        info['pts'] = pts_out
     if key:
         MANIFEST[key] = info
     print('SPRITE', key or path, info)

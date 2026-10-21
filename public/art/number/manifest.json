@@ -236,5 +236,87 @@
   "h": 330,
   "ax": 166.1,
   "ay": 174.0
+ },
+ "windmill": {
+  "file": "windmill.webp",
+  "w": 548,
+  "h": 716,
+  "ax": 251.0,
+  "ay": 493.0,
+  "pts": {
+   "hub": [
+    318.1,
+    330.6
+   ]
+  }
+ },
+ "windmill_blades": {
+  "file": "windmill_blades.webp",
+  "w": 536,
+  "h": 482,
+  "ax": 244.5,
+  "ay": 224.7
+ },
+ "castle": {
+  "file": "castle.webp",
+  "w": 705,
+  "h": 662,
+  "ax": 329.5,
+  "ay": 422.1
+ },
+ "lighthouse": {
+  "file": "lighthouse.webp",
+  "w": 554,
+  "h": 741,
+  "ax": 253.6,
+  "ay": 497.9,
+  "pts": {
+   "lamp": [
+    253.6,
+    172.9
+   ]
+  }
+ },
+ "balloon": {
+  "file": "balloon.webp",
+  "w": 464,
+  "h": 508,
+  "ax": 209.1,
+  "ay": 393.1
+ },
+ "boat": {
+  "file": "boat.webp",
+  "w": 482,
+  "h": 424,
+  "ax": 217.7,
+  "ay": 232.6
+ },
+ "sculpture1": {
+  "file": "sculpture1.webp",
+  "w": 459,
+  "h": 370,
+  "ax": 206.5,
+  "ay": 182.3
+ },
+ "sculpture2": {
+  "file": "sculpture2.webp",
+  "w": 459,
+  "h": 370,
+  "ax": 206.5,
+  "ay": 182.3
+ },
+ "sculpture3": {
+  "file": "sculpture3.webp",
+  "w": 459,
+  "h": 370,
+  "ax": 206.5,
+  "ay": 182.3
+ },
+ "rainbow": {
+  "file": "rainbow.webp",
+  "w": 790,
+  "h": 345,
+  "ax": 371.8,
+  "ay": 221.1
  }
 }
