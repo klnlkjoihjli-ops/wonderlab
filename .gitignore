@@ -10,3 +10,9 @@ cache/
 .DS_Store
 *.mp4
 .claude/settings.local.json
+
+# 渲染出的原始大图只留本机，网页用压缩后的 JPG/WebP
+public/art/**/*.png
+art/raw/
+__pycache__/
+*.pyc

@@ -1,0 +1,72 @@
+{
+ "owl_idle": {
+  "file": "owl_idle.webp",
+  "w": 287,
+  "h": 264,
+  "ax": 128.1,
+  "ay": 193.5
+ },
+ "owl_wave": {
+  "file": "owl_wave.webp",
+  "w": 286,
+  "h": 264,
+  "ax": 138.4,
+  "ay": 193.5
+ },
+ "owl_cheer": {
+  "file": "owl_cheer.webp",
+  "w": 266,
+  "h": 264,
+  "ax": 117.3,
+  "ay": 193.5
+ },
+ "owl_fly": {
+  "file": "owl_fly.webp",
+  "w": 266,
+  "h": 264,
+  "ax": 117.3,
+  "ay": 253.8
+ },
+ "rabbit_idle": {
+  "file": "rabbit_idle.webp",
+  "w": 233,
+  "h": 358,
+  "ax": 101.1,
+  "ay": 291.1
+ },
+ "rabbit_happy": {
+  "file": "rabbit_happy.webp",
+  "w": 234,
+  "h": 358,
+  "ax": 101.5,
+  "ay": 290.6
+ },
+ "kid_idle": {
+  "file": "kid_idle.webp",
+  "w": 213,
+  "h": 294,
+  "ax": 92.8,
+  "ay": 243.6
+ },
+ "kid_walk1": {
+  "file": "kid_walk1.webp",
+  "w": 213,
+  "h": 292,
+  "ax": 92.8,
+  "ay": 243.6
+ },
+ "kid_walk2": {
+  "file": "kid_walk2.webp",
+  "w": 213,
+  "h": 288,
+  "ax": 92.8,
+  "ay": 243.6
+ },
+ "kid_cheer": {
+  "file": "kid_cheer.webp",
+  "w": 213,
+  "h": 294,
+  "ax": 92.8,
+  "ay": 258.6
+ }
+}

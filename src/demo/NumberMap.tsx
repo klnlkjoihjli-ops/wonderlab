@@ -5,6 +5,7 @@ import { logEvent } from '../world/platformStore';
 import { sfx, speak, stopSpeaking } from '../audio';
 import { CloseIcon, OwlFace } from '../components/Icons';
 import { HoldButton } from '../world/HoldButton';
+import { DepthSorted, LAYOUT, SpriteImg, artUrl, useArt, ART_SCALE } from './MapArt';
 
 // 数字岛 2D 大地图（小样）：一张能拖、能缩放的插画地图。
 // 地图上的东西都是“数据”：关卡点、小路、居民、彩蛋的位置写在下面的表里，以后加内容不用改画法。
@@ -12,11 +13,9 @@ import { HoldButton } from '../world/HoldButton';
 const WORLD = { w: 2400, h: 1500 };
 type Pt = [number, number];
 /** 小路：从码头出发，经过 10 个关卡 */
-const GATE: Pt = [300, 1270];
-const SPOTS: Record<string, Pt> = {
-  m1: [520, 1150], m2: [740, 1215], m3: [930, 1100], m4: [1040, 950], m5: [860, 820],
-  m6: [1060, 690], m7: [1300, 760], m8: [1480, 650], m9: [1420, 470], m10: [1640, 390]
-};
+// 位置都来自 numberLayout.json（Blender 渲染底图也读这一份）
+const GATE = LAYOUT.gate as Pt;
+const SPOTS = LAYOUT.spots as unknown as Record<string, Pt>;
 const ORDER = ['m1', 'm2', 'm3', 'm4', 'm5', 'm6', 'm7', 'm8', 'm9', 'm10'];
 const READY = new Set(['m1']);                   // 小样里能直接玩的关（摘花游戏）
 const RABBIT_LINES = [
@@ -59,8 +58,12 @@ export function NumberMap({ p, update, profile, focus, onBack }: {
   const [eggs, setEggs] = useState<Set<string>>(new Set());
   const [apple, setApple] = useState(0); const [fish, setFish] = useState(0);
   const [rabbitLine, setRabbitLine] = useState(0);
+  // 走路时两帧交替：按走过的距离换脚
+  const walkFrame = Math.floor((kid.pos[0] + kid.pos[1]) / 26) % 2 === 0;
   const lengths = useRef<number[]>([]);           // 每个点在小路上的位置（长度）
 
+  const art = useArt();
+  const A = art && art !== 'missing' ? art : null;
   const done = useMemo(() => new Set(p.done), [p.done]);
   const state = (id: string) => nodeState(id, done);
   const nextId = ORDER.find(id => state(id) === 'now');
@@ -182,6 +185,56 @@ export function NumberMap({ p, update, profile, focus, onBack }: {
       <div className="map-box" ref={box} onPointerDown={onDown} onPointerMove={onMove} onPointerUp={onUp} onPointerCancel={onUp} onWheel={onWheel}>
         <svg className="map-svg" viewBox={vb} preserveAspectRatio="xMidYMid slice">
           <MapDefs />
+          {A ? (
+            <>
+              {/* 底图：Blender 渲染的地形（海、沙滩、草地、小山、小河、池塘、小路） */}
+              <image href={artUrl('/art/number/base.jpg')} x={0} y={0} width={WORLD.w} height={WORLD.h} />
+              <rect x={-400} y={-400} width={WORLD.w + 800} height={400} fill="#33a1c2" />
+              <rect x={-400} y={WORLD.h} width={WORLD.w + 800} height={400} fill="#33a1c2" />
+              <rect x={-400} y={0} width={400} height={WORLD.h} fill="#33a1c2" /><rect x={WORLD.w} y={0} width={400} height={WORLD.h} fill="#33a1c2" />
+              <g className="waves">{Array.from({ length: 14 }, (_, i) => <path key={i} d={`M${(i * 173) % 2300 + 40},${(i % 2 ? 60 + i * 9 : 1430 - i * 6)} q12,-8 24,0 q12,8 24,0`} />)}</g>
+              {/* 走路用的小路（看不见，只用来算位置） */}
+              <path ref={pathRef} d={ROUTE_D} fill="none" stroke="none" />
+              {/* 池塘里的小鱼（彩蛋） */}
+              <g onClick={tapPond} className="tappable">
+                <ellipse cx={LAYOUT.pond.cx} cy={LAYOUT.pond.cy} rx={LAYOUT.pond.rx} ry={LAYOUT.pond.ry} fill="transparent" />
+                <g key={fish} className={fish ? 'fish-jump' : ''} transform={`translate(${LAYOUT.pond.cx - 10},${LAYOUT.pond.cy - 10})`}><path d="M-22,0 Q0,-16 22,0 Q0,16 -22,0 Z M22,0 L36,-10 L36,10 Z" fill="#ff9a5c" /></g>
+              </g>
+              <DepthSorted items={[
+                ...LAYOUT.props.map((pr, i) => {
+                  const [x, y] = pr.at as Pt;
+                  let key = pr.id;
+                  if (pr.id === 'clocktower') key = done.has('m7') ? 'clocktower_restored' : 'clocktower_stopped';
+                  if (/^house\d+$/.test(pr.id)) key = `${pr.id}_${done.has('m' + pr.id.slice(5)) ? 'lit' : 'dark'}`;
+                  if (pr.id === 'appletree') key = apple ? 'appletree_bare' : 'appletree';
+                  const onClick = pr.tap === 'clock' ? tapClock : pr.tap === 'apple' ? tapTree : undefined;
+                  return {
+                    y, key: `p${i}`, node: (
+                      <>
+                        <SpriteImg s={A.props[key]} dir="number" x={x} y={y} className={onClick ? 'tappable' : undefined} onClick={onClick} />
+                        {pr.id === 'appletree' && apple > 0 && Array.from({ length: Math.min(apple, 5) }, (_, k) => (
+                          <SpriteImg key={k} s={A.props.apple} dir="number" x={x - 50 + k * 22} y={y + 22} className={k === apple - 1 ? 'apple-drop' : ''} />
+                        ))}
+                        {pr.id === 'appletree' && apple > 0 && apple < 5 && Array.from({ length: 5 - apple }, (_, k) => (
+                          <SpriteImg key={`t${k}`} s={A.props.apple} dir="number" x={x - 28 + k * 22} y={y - 70 - (k % 2) * 22} />
+                        ))}
+                        {pr.label && <text x={x} y={y - 38} textAnchor="middle" fontSize={20} fontWeight={800} fill="#2a3a33">{pr.label}</text>}
+                      </>
+                    )
+                  };
+                }),
+                ...ORDER.map((id, i) => ({ y: SPOTS[id][1], key: id, node: <SpotArt A={A} id={id} n={nodeOf(id)} at={SPOTS[id]} st={state(id)} next={id === nextId} idx={i + 1} onTap={() => tapSpot(id)} /> })),
+                { y: 1075, key: 'rabbit', node: <SpriteImg s={A.chars[rabbitLine % 2 ? 'rabbit_happy' : 'rabbit_idle']} dir="chars" x={330} y={1075} className="tappable rabbit-art" onClick={tapRabbit} /> },
+                { y: kid.pos[1] + 15, key: 'kid', node: <SpriteImg s={A.chars[kid.walking ? (walkFrame ? 'kid_walk1' : 'kid_walk2') : 'kid_idle']} dir="chars" x={kid.pos[0] - (kid.walking || kid.at === 'gate' ? 0 : 62)} y={kid.pos[1] + (kid.walking || kid.at === 'gate' ? 0 : 14)} flip={kid.face < 0} /> }
+              ]} />
+              {/* 灰灰雾里的地方（还没浮出来） */}
+              <Fog x={560} y={330} label="比一比集市" sub="正式版会浮出来" onTap={() => tapFog('比一比集市', 560, 330)} />
+              {!done.has('m7') && <Fog x={1900} y={470} label="钟楼广场" sub="时间与钱" onTap={tapClock} light />}
+              {/* 守护者名字 */}
+              <g transform="translate(330,880)" pointerEvents="none"><rect x={-62} y={-18} width={124} height={34} rx={17} fill="#4fb39b" /><text y={6} textAnchor="middle" fontSize={18} fontWeight={700} fill="#fff">数数兔 💬</text></g>
+            </>
+          ) : (
+            <>
           {/* 海和岛 */}
           <rect x={-400} y={-400} width={WORLD.w + 800} height={WORLD.h + 800} fill="url(#sea)" />
           <g className="waves">{Array.from({ length: 18 }, (_, i) => <path key={i} d={`M${(i * 137) % 2300 + 40},${(i * 211) % 1400 + 60} q12,-8 24,0 q12,8 24,0`} />)}</g>
@@ -238,6 +291,8 @@ export function NumberMap({ p, update, profile, focus, onBack }: {
           {/* 小人 */}
           {/* 走路时踩在小路中间；停下来站在关卡旁边，不挡住关卡图标 */}
           <Kid x={kid.pos[0] - (kid.walking || kid.at === 'gate' ? 0 : 62)} y={kid.pos[1] + (kid.walking || kid.at === 'gate' ? 0 : 14)} walking={kid.walking} face={kid.face} />
+            </>
+          )}
           {/* 飘着的云 */}
           <g className="clouds">{[[300, 160], [1500, 240], [2050, 1250], [900, 90]].map(([x, y], i) => <Cloud key={i} x={x} y={y} s={1 + (i % 2) * 0.4} i={i} />)}</g>
           {/* 气泡 */}
@@ -449,3 +504,20 @@ function Kid({ x, y, walking, face }: { x: number; y: number; walking: boolean; 
     </g>
   );
 }
+
+/** 用素材画的关卡点：黏土台子（三种状态）+ 上面的图标 + 名字 */
+function SpotArt({ A, id, n, at, st, next, idx, onTap }: { A: import('./MapArt').Art; id: string; n: Node; at: Pt; st: 'done' | 'now' | 'lock'; next: boolean; idx: number; onTap: () => void }) {
+  const badge = st === 'done' ? '#f4c64a' : st === 'now' ? '#4fb39b' : '#a8a196';
+  return (
+    <g className={`tappable spot ${st} ${next ? 'next' : ''}`} onClick={onTap} data-id={id}>
+      {next && <ellipse cx={at[0]} cy={at[1]} rx={70} ry={46} fill="#fff3a0" opacity={0.6} className="spot-pulse" />}
+      <SpriteImg s={A.props[`spot_${st}`]} dir="number" x={at[0]} y={at[1]} />
+      <g transform={`translate(${at[0]},${at[1] - 34})`}>
+        <text y={0} textAnchor="middle" fontSize={40} opacity={st === 'lock' ? 0.45 : 1}>{n.icon}</text>
+        <g transform="translate(34,-30)"><circle r={16} fill={badge} stroke="#fff" strokeWidth={3} /><text y={6} textAnchor="middle" fontSize={17} fontWeight={800} fill="#fff">{st === 'done' ? '✓' : st === 'lock' ? '🔒' : idx}</text></g>
+      </g>
+      <g transform={`translate(${at[0]},${at[1] + 52})`}><rect x={-78} y={-18} width={156} height={34} rx={17} fill="#fffaf0" opacity={0.95} /><text y={6} textAnchor="middle" fontSize={19} fontWeight={700} fill="#2a3a33">{n.name}</text></g>
+    </g>
+  );
+}
+void ART_SCALE;

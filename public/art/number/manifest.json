@@ -1,0 +1,240 @@
+{
+ "clocktower_stopped": {
+  "file": "clocktower_stopped.webp",
+  "w": 442,
+  "h": 644,
+  "ax": 197.9,
+  "ay": 483.4
+ },
+ "clocktower_restored": {
+  "file": "clocktower_restored.webp",
+  "w": 442,
+  "h": 644,
+  "ax": 197.9,
+  "ay": 483.4
+ },
+ "house1_dark": {
+  "file": "house1_dark.webp",
+  "w": 392,
+  "h": 354,
+  "ax": 173.0,
+  "ay": 207.7
+ },
+ "house2_dark": {
+  "file": "house2_dark.webp",
+  "w": 392,
+  "h": 354,
+  "ax": 173.0,
+  "ay": 207.7
+ },
+ "house3_dark": {
+  "file": "house3_dark.webp",
+  "w": 392,
+  "h": 354,
+  "ax": 173.0,
+  "ay": 207.7
+ },
+ "house4_dark": {
+  "file": "house4_dark.webp",
+  "w": 392,
+  "h": 354,
+  "ax": 173.0,
+  "ay": 207.7
+ },
+ "house5_dark": {
+  "file": "house5_dark.webp",
+  "w": 392,
+  "h": 354,
+  "ax": 173.0,
+  "ay": 207.7
+ },
+ "house6_dark": {
+  "file": "house6_dark.webp",
+  "w": 392,
+  "h": 354,
+  "ax": 173.0,
+  "ay": 207.7
+ },
+ "house7_dark": {
+  "file": "house7_dark.webp",
+  "w": 392,
+  "h": 354,
+  "ax": 173.0,
+  "ay": 207.7
+ },
+ "house8_dark": {
+  "file": "house8_dark.webp",
+  "w": 392,
+  "h": 354,
+  "ax": 173.0,
+  "ay": 207.7
+ },
+ "house9_dark": {
+  "file": "house9_dark.webp",
+  "w": 392,
+  "h": 354,
+  "ax": 173.0,
+  "ay": 207.7
+ },
+ "house10_dark": {
+  "file": "house10_dark.webp",
+  "w": 392,
+  "h": 354,
+  "ax": 173.0,
+  "ay": 207.7
+ },
+ "house1_lit": {
+  "file": "house1_lit.webp",
+  "w": 392,
+  "h": 354,
+  "ax": 173.0,
+  "ay": 207.7
+ },
+ "house2_lit": {
+  "file": "house2_lit.webp",
+  "w": 392,
+  "h": 354,
+  "ax": 173.0,
+  "ay": 207.7
+ },
+ "house3_lit": {
+  "file": "house3_lit.webp",
+  "w": 392,
+  "h": 354,
+  "ax": 173.0,
+  "ay": 207.7
+ },
+ "house4_lit": {
+  "file": "house4_lit.webp",
+  "w": 392,
+  "h": 354,
+  "ax": 173.0,
+  "ay": 207.7
+ },
+ "house5_lit": {
+  "file": "house5_lit.webp",
+  "w": 392,
+  "h": 354,
+  "ax": 173.0,
+  "ay": 207.7
+ },
+ "house6_lit": {
+  "file": "house6_lit.webp",
+  "w": 392,
+  "h": 354,
+  "ax": 173.0,
+  "ay": 207.7
+ },
+ "house7_lit": {
+  "file": "house7_lit.webp",
+  "w": 392,
+  "h": 354,
+  "ax": 173.0,
+  "ay": 207.7
+ },
+ "house8_lit": {
+  "file": "house8_lit.webp",
+  "w": 392,
+  "h": 354,
+  "ax": 173.0,
+  "ay": 207.7
+ },
+ "house9_lit": {
+  "file": "house9_lit.webp",
+  "w": 392,
+  "h": 354,
+  "ax": 173.0,
+  "ay": 207.7
+ },
+ "house10_lit": {
+  "file": "house10_lit.webp",
+  "w": 392,
+  "h": 354,
+  "ax": 173.0,
+  "ay": 207.7
+ },
+ "appletree": {
+  "file": "appletree.webp",
+  "w": 466,
+  "h": 464,
+  "ax": 203.1,
+  "ay": 344.0
+ },
+ "appletree_bare": {
+  "file": "appletree_bare.webp",
+  "w": 466,
+  "h": 464,
+  "ax": 203.1,
+  "ay": 344.0
+ },
+ "apple": {
+  "file": "apple.webp",
+  "w": 202,
+  "h": 158,
+  "ax": 77.8,
+  "ay": 71.5
+ },
+ "tree0": {
+  "file": "tree0.webp",
+  "w": 404,
+  "h": 408,
+  "ax": 178.5,
+  "ay": 292.4
+ },
+ "tree1": {
+  "file": "tree1.webp",
+  "w": 387,
+  "h": 358,
+  "ax": 170.4,
+  "ay": 247.4
+ },
+ "tree2": {
+  "file": "tree2.webp",
+  "w": 362,
+  "h": 341,
+  "ax": 151.5,
+  "ay": 248.7
+ },
+ "dock": {
+  "file": "dock.webp",
+  "w": 476,
+  "h": 392,
+  "ax": 215.0,
+  "ay": 182.5
+ },
+ "bridge": {
+  "file": "bridge.webp",
+  "w": 486,
+  "h": 356,
+  "ax": 220.0,
+  "ay": 187.5
+ },
+ "sign": {
+  "file": "sign.webp",
+  "w": 350,
+  "h": 267,
+  "ax": 152.1,
+  "ay": 187.5
+ },
+ "spot_lock": {
+  "file": "spot_lock.webp",
+  "w": 378,
+  "h": 299,
+  "ax": 166.1,
+  "ay": 142.4
+ },
+ "spot_now": {
+  "file": "spot_now.webp",
+  "w": 378,
+  "h": 299,
+  "ax": 166.1,
+  "ay": 142.4
+ },
+ "spot_done": {
+  "file": "spot_done.webp",
+  "w": 378,
+  "h": 330,
+  "ax": 166.1,
+  "ay": 174.0
+ }
+}
