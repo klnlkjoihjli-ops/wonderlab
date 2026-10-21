@@ -1,9 +1,18 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, type ReactNode } from 'react';
 import { AGES, AREAS, DOMAINS, NODES, PET, SHOP, ageBandOf, ageIndex, isChallenge, nextAreaIn, node, nodeState, openAreas, petOf, prereqs, visibleFor, type AgeId, type AreaId, type DomainId, type Node } from '../../shared/platform';
 import { ageOf, dailyThree } from '../../shared/daily';
 import { ENGINES, PLAYS, SCENES } from '../../shared/games';
 import { SORT_LEVELS } from '../../shared/modules/sort';
+import { LAB_LEVELS } from '../../shared/modules/lab';
+import { MATCH_LEVELS, MISSION_LEVELS, ORDER_LEVELS, SCENE_LEVELS, SPOT_LEVELS, type MissionRecord } from '../../shared/modules/play';
 import { SortGame } from './SortGame';
+import { LabGame, MatchGame, MissionGame, OrderGame, SceneGame, SpotGame } from './Games';
+
+/** 这一关现在能不能玩：有小样内容，或者已经有 3D 工作台 */
+const BENCH = new Set(['c2', 'v3']);
+const playable = (id: string) => Boolean(SORT_LEVELS[id] || LAB_LEVELS[id] || MATCH_LEVELS[id] || SPOT_LEVELS[id] || SCENE_LEVELS[id] || ORDER_LEVELS[id] || MISSION_LEVELS[id] || BENCH.has(id));
+/** 本地日期（线框版可以“当作过了一天”来演示生活任务卡） */
+const dayOf = (shift: number) => { const d = new Date(); d.setDate(d.getDate() + shift); return `${d.getFullYear()}-${d.getMonth() + 1}-${d.getDate()}`; };
 
 // 线框版：不放美术，只用方块、文字和 emoji，把“怎么点、怎么进去、怎么分类、不同年龄看到什么”走通。
 // 分类、关卡、年龄段、解锁规则、每天三件事都直接用 shared/ 里的真规则，和正式版保持一致。
@@ -14,12 +23,12 @@ type Route =
   | { s: 'level'; id: string } | { s: 'play'; id: string } | { s: 'done'; id: string; opened: string[] }
   | { s: 'reward' } | { s: 'parent' } | { s: 'map' };
 type Ev = { at: string; type: string; node: string };
-type State = { done: string[]; events: Ev[]; flowers: number; xp: number; areas: Record<string, boolean>; band: AgeId };
+type State = { done: string[]; events: Ev[]; flowers: number; xp: number; areas: Record<string, boolean>; band: AgeId; missions: Record<string, MissionRecord[]>; dayShift: number };
 
 const KEY = 'wonderlab.proto.v1';
 /** 默认按演示孩子豆豆（2021 年 2 月出生）的年龄 */
 const DEFAULT_BAND = ageBandOf(ageOf('2021-02').total);
-const fresh = (band: AgeId = DEFAULT_BAND): State => ({ done: [], events: [], flowers: 0, xp: 0, areas: {}, band });
+const fresh = (band: AgeId = DEFAULT_BAND): State => ({ done: [], events: [], flowers: 0, xp: 0, areas: {}, band, missions: {}, dayShift: 0 });
 function load(): State {
   try {
     const v = JSON.parse(localStorage.getItem(KEY) ?? '');
@@ -52,7 +61,7 @@ const NOTES: Record<Route['s'], { what: string; art: string }> = {
   island: { what: '一座岛里分几个区域，分类参照《指南》和课标。有的区域要点亮够了关卡才“浮出来”；这个年龄还没有内容的区域（比如幼儿园阶段的英语）会显示什么时候开放。', art: '这座岛的大地图（比如数字岛那张），区域用地标表示' },
   area: { what: '一个区域里的关卡一层一层排：上一层点亮了，下一层才能玩。只显示这个年龄能看到的关；比自己年龄段小的关当作已经会了，也可以回去玩。自己年龄段的都点亮了，会出现下一段的“挑战关”。', art: '地图上的小路和关卡点，或者一条台阶/小路' },
   level: { what: '关卡说明：这一关学什么、怎么玩、适合几岁、依据哪份文件。家长看得懂，孩子听小诺读。', art: '关卡的小插图、小诺讲解' },
-  play: { what: '每关用 17 种玩法里的一种。“分一分”已经做成能玩的小样（认识形状、冷暖色、动物的家、自然的还是人造的、垃圾分类）；其余玩法先显示设计稿，用一个按钮代替。', art: '每种玩法设计一次，所有用它的关共用' },
+  play: { what: '每关用 17 种玩法里的一种。发现岛幼儿园段（到幼小衔接）的 39 关全部能玩：猜一猜·试一试、分一分、配一配、放大镜、小剧场、排顺序、生活任务卡；其他岛有几关“分一分”能玩，其余先显示设计稿。', art: '每种玩法设计一次，所有用它的关共用' },
   done: { what: '完成奖励：得小红花，告诉孩子新开放了哪些关卡。', art: '撒花动画、小诺欢呼、新关卡亮起来' },
   reward: { what: '小红花和成长伙伴：攒花换奖励（家长确认），伙伴随经验长大。', art: '伙伴的 5 个成长阶段、奖励商店' },
   parent: { what: '家长端：看每座岛的进度，手动打开或关上区域，清空进度。', art: '家长端以简洁为主，不需要太多美术' },
@@ -122,7 +131,7 @@ export function ProtoApp() {
         {route.s === 'island' && <Island d={route.d} st={st} go={go} />}
         {route.s === 'area' && <Area a={route.a} st={st} go={go} />}
         {route.s === 'level' && <Level id={route.id} st={st} go={go} />}
-        {route.s === 'play' && <Play id={route.id} onFinish={() => finish(route.id)} />}
+        {route.s === 'play' && <Play id={route.id} st={st} setSt={setSt} onFinish={() => finish(route.id)} />}
         {route.s === 'done' && <Done id={route.id} opened={route.opened} st={st} toArea={() => toArea(node(route.id).a)} home={home} />}
         {route.s === 'reward' && <Reward st={st} />}
         {route.s === 'parent' && <Parent st={st} open={open} setSt={setSt} />}
@@ -310,7 +319,7 @@ function Level({ id, st, go }: { id: string; st: State; go: (r: Route) => void }
         <p>{dom(n.d).icon} {dom(n.d).name} › {areaOf(n.a).name} › 第 {n.lv + 1} 层</p>
         <p><b>学会了：</b>{n.goal}</p>
         <p className="pf-play"><b>玩法：</b>{ENGINES[PLAYS[n.id][0]].icon} {ENGINES[PLAYS[n.id][0]].name} — {PLAYS[n.id][1]}</p>
-        <p className="pf-src">{SCENES[n.a].place}的{SCENES[n.a].npc}请你帮忙 · 完成后{SCENES[n.a].reward}{SORT_LEVELS[n.id] || n.module ? ' · 已经能玩' : ' · 玩法还在设计稿里'}</p>
+        <p className="pf-src">{SCENES[n.a].place}的{SCENES[n.a].npc}请你帮忙 · 完成后{SCENES[n.a].reward}{playable(n.id) ? ' · 已经能玩' : ' · 玩法还在设计稿里'}</p>
         <p><b>适合：</b>{A ? `${A.name}（${A.range}）` : '还没按年龄整理'} <AgeChip n={n} band={st.band} /></p>
         {n.src && <p className="pf-src"><b>依据：</b>{srcFull(n.src)}</p>}
         {pre.length > 0 && <p><b>先要点亮：</b>{pre.map(p => `${p.name}${done.has(p.id) ? ' ✓' : p.age && ageIndex(p.age) < ageIndex(st.band) ? '（这个年龄当作已经会了）' : ''}`).join('、')}</p>}
@@ -323,16 +332,34 @@ function Level({ id, st, go }: { id: string; st: State; go: (r: Route) => void }
   );
 }
 
-function Play({ id, onFinish }: { id: string; onFinish: () => void }) {
+function Play({ id, st, setSt, onFinish }: { id: string; st: State; setSt: (f: (p: State) => State) => void; onFinish: () => void }) {
   const n = node(id), [e, line] = PLAYS[id], E = ENGINES[e];
-  if (SORT_LEVELS[id]) return <div className="pf-col narrow"><SortGame level={SORT_LEVELS[id]} onFinish={onFinish} /></div>;
-  return (
-    <div className="pf-col narrow">
-      <Art h={240}>{`「${n.name}」· ${E.icon} ${E.name}：${line}`}</Art>
-      <p className="pf-hint"><b>这种玩法怎么玩：</b>{E.loop}。<b>怎么判断：</b>{E.judge}。<b>不同年龄：</b>{E.ages}。</p>
-      <button className="pf-cta" onClick={onFinish}>✓ 我玩完了（线框版直接算完成）</button>
-    </div>
-  );
+  const wrap = (el: ReactNode) => <div className="pf-col narrow" key={id}>{el}</div>;
+  if (SORT_LEVELS[id]) return wrap(<SortGame level={SORT_LEVELS[id]} onFinish={onFinish} />);
+  if (LAB_LEVELS[id]) return wrap(<LabGame level={LAB_LEVELS[id]} onFinish={onFinish} />);
+  if (MATCH_LEVELS[id]) return wrap(<MatchGame level={MATCH_LEVELS[id]} onFinish={onFinish} />);
+  if (SPOT_LEVELS[id]) return wrap(<SpotGame level={SPOT_LEVELS[id]} onFinish={onFinish} />);
+  if (SCENE_LEVELS[id]) return wrap(<SceneGame level={SCENE_LEVELS[id]} onFinish={onFinish} />);
+  if (ORDER_LEVELS[id]) return wrap(<OrderGame level={ORDER_LEVELS[id]} onFinish={onFinish} />);
+  if (MISSION_LEVELS[id]) {
+    const recs = st.missions[id] ?? [];
+    return wrap(<>
+      <MissionGame key={`${id}-${st.dayShift}-${recs.length}`} level={MISSION_LEVELS[id]} recs={recs} today={dayOf(st.dayShift)}
+        onRecord={r => setSt(p => ({ ...p, missions: { ...p.missions, [id]: [...(p.missions[id] ?? []), r] } }))} onFinish={onFinish} />
+      <p className="pf-hint">线框版演示：<button className="pf-btn small" onClick={() => setSt(p => ({ ...p, dayShift: p.dayShift + 1 }))}>⏩ 当作过了一天</button>（真正使用时一天只能记一次）</p>
+    </>);
+  }
+  if (BENCH.has(id)) return wrap(<>
+    <Art h={140}>{`「${n.name}」在 3D 工作台上玩（已经做好）`}</Art>
+    <a className="pf-cta" href={`bench.html?node=${id}`}>🔧 打开 3D 工作台</a>
+    <p className="pf-hint">3D 工作台需要在 Mac 或 iPad 的本机地址打开（localhost:4177 或 :4178）。玩完回来点下面的按钮算完成。</p>
+    <button className="pf-cta alt" onClick={onFinish}>✓ 我在工作台上玩完了</button>
+  </>);
+  return wrap(<>
+    <Art h={240}>{`「${n.name}」· ${E.icon} ${E.name}：${line}`}</Art>
+    <p className="pf-hint"><b>这种玩法怎么玩：</b>{E.loop}。<b>怎么判断：</b>{E.judge}。<b>不同年龄：</b>{E.ages}。</p>
+    <button className="pf-cta" onClick={onFinish}>✓ 我玩完了（线框版直接算完成）</button>
+  </>);
 }
 
 function Done({ id, opened, st, toArea, home }: { id: string; opened: string[]; st: State; toArea: () => void; home: () => void }) {
